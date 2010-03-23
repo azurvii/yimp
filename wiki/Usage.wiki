@@ -6,7 +6,7 @@
 This program is aimed to ease analysis of blot images.
 
 
-== Interface ==
+== User Interface ==
 
 There are three major tabs:
   * *Image* is where you can see the blot image.
