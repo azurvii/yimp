@@ -1,0 +1,25 @@
+#summary Notes for install the software on your platform.
+#labels Featured,Phase-Deploy
+
+== Mac OS X _(Tested on Mac OS X 10.6.2)_ ==
+
+  * Download yimp.app.zip.
+  * Unzip and run the app.
+
+
+== Windows _(Tested on Windows XP SP3)_ ==
+
+  * Download setup.exe.
+  * Install and run it from Start menu.
+
+
+== Linux _(Tested on Ubuntu 9.10)_ ==
+
+  * Give various distributions, no binary is provided; you need to compile it yourself.
+  * Download yimp.src.tar.gz.
+  * Install G++, make, and Qt development headers and libraries on your system. For example, in Ubuntu, run the command:
+    `sudo apt-get install g++ qt4-dev-tools libqt4-dev make`
+  * Unpack the src tarball file.
+  * Run the command inside the source directory:
+    `qmake && make`
+  * The executable is in the build subdirectory.
