@@ -1,4 +1,4 @@
-#summary Notes for install the software on your platform.
+#summary Notes for installing the software on your platform.
 #labels Featured,Phase-Deploy
 
 == Mac OS X _(Tested on Mac OS X 10.6.2)_ ==
