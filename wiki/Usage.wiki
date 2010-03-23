@@ -47,14 +47,18 @@ Commonly used functions are put in the toolbars. Others are in the menus.
 
   * After loading an image, some information about the image will be logged here.
   * The result of average calculation is shown here, in a CSV-compliant format. It means copy it and save it with .csv suffix will allow a spreadsheet application to open it. The output is transposed. Assuming input image is arranged as:
-||     || K || I || ... ||
-||  -5 || x || x || ... ||
-||  -4 || x || x || ... ||
-|| ... || x || x || ... ||
+
+||     ||  K  ||  I  || ... ||
+||  -5 ||  x  ||  x  || ... ||
+||  -4 ||  x  ||  x  || ... ||
+|| ... || ... || ... || ... ||
+
     the output will be as:
-||     || -5 || -4 || ... ||
-||  K  ||  x ||  x || ... ||
-||  I  ||  x ||  x || ... ||
-|| ... ||  x ||  x || ... ||
+
+||     ||  -5 ||  -4 || ... ||
+||  K  ||  x  ||  x  || ... ||
+||  I  ||  x  ||  x  || ... ||
+|| ... || ... || ... || ... ||
+
     which might be more handy in spreadsheet applications.
-  * Or you can get PSPM (position specific probability matrix) CSV file directly from menu "Console" > "Export PSPM". This is 
+  * Or you can get PSPM (position specific probability matrix) CSV file directly from menu "Console" > "Export PSPM". This is also in a transposed format just described. 
