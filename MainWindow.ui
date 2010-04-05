@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>IMage Proj</string>
+   <string>Yaffe Lab Image Processor</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -133,7 +133,7 @@
             <property name="geometry">
              <rect>
               <x>0</x>
-              <y>-110</y>
+              <y>0</y>
               <width>208</width>
               <height>353</height>
              </rect>
@@ -298,8 +298,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>184</width>
-              <height>258</height>
+              <width>128</width>
+              <height>110</height>
              </rect>
             </property>
             <attribute name="label">
@@ -509,7 +509,7 @@
               <x>0</x>
               <y>0</y>
               <width>100</width>
-              <height>360</height>
+              <height>157</height>
              </rect>
             </property>
             <attribute name="label">
@@ -657,6 +657,7 @@
     </property>
     <addaction name="actionConsoleClear"/>
     <addaction name="actionExportPspm"/>
+    <addaction name="actionExportAverages"/>
    </widget>
    <addaction name="menuImage"/>
    <addaction name="menuCalculate"/>
@@ -836,6 +837,11 @@
   <action name="actionExportPspm">
    <property name="text">
     <string>Export PSPM</string>
+   </property>
+  </action>
+  <action name="actionExportAverages">
+   <property name="text">
+    <string>Export averages</string>
    </property>
   </action>
  </widget>

@@ -21,70 +21,30 @@ public:
     ImageCanvas(QWidget *parent = 0);
     virtual ~ImageCanvas();
     QBitmap getMask() const;
-    QVector<QRect> getGrid() const {
-        return circleGrid;
-    }
-    QPoint getGridStartPoint() const {
-        return QPoint(startX, startY);
-    }
-    QVector<QPolygon> getPolygons() const {
-        return polygons;
-    }
-    double getGridAngle() const {
-        return angle;
-    }
+    QVector<QRect> getGrid() const;
+    QPoint getGridStartPoint() const;
+    QVector<QPolygon> getPolygons() const;
+    double getGridAngle() const;
 
 public slots:
     void addCircleGrid(int leftTopX, int leftTopY, int rightBottomX,
             int rightBottomY, double radius, int col, int row, double angle);
     void drawBackground(int leftTopX, int leftTopY, int rightBottomX,
-            int rightBottomY) {
-        bg.setX(leftTopX);
-        bg.setY(leftTopY);
-        bg.setWidth(rightBottomX - leftTopX);
-        bg.setHeight(rightBottomY - leftTopY);
-        scanBackground();
-    }
-    void drawBackground(bool shown) {
-        showBg = shown;
-    }
-    void loadCircleGrid(const QVector<QRect> &circleGrid) {
-        this->circleGrid = circleGrid;
-    }
+            int rightBottomY);
+    void drawBackground(bool shown);
+    void loadCircleGrid(const QVector<QRect> &circleGrid);
     void drawCircleGrid();
     void addPolygon(const QPolygon &polygon);
-    void loadPolygons(const QVector<QPolygon> &polygons) {
-        this->polygons = polygons;
-    }
-    void loadGridStartPoint(const QPoint &startPoint) {
-        startX = startPoint.x();
-        startY = startPoint.y();
-    }
-    void loadGridAngle(double angle) {
-        this->angle = angle;
-    }
+    void loadPolygons(const QVector<QPolygon> &polygons);
+    void loadGridStartPoint(const QPoint &startPoint);
+    void loadGridAngle(double angle);
     void rotate(double angle);
     void clearCircleGrid();
     void clearPolygons();
-    void clearLastPolygon() {
-        if (polygons.size() > 0) {
-            polygons.pop_back();
-        }
-    }
-    void clearBackground() {
-        bg = QRect();
-        showBg = false;
-    }
-    void setImage(QImage *image) {
-        this->image = image;
-        if (image) {
-            this->setPixmap(QPixmap::fromImage(*image).scaled(image->width()
-                    * scale, image->height() * scale));
-        }
-    }
-    void setScale(double scale) {
-        this->scale = scale;
-    }
+    void clearLastPolygon();
+    void clearBackground();
+    void setImage(QImage *image);
+    void setScale(double scale);
 
     signals:
     void backgroundMinChanged(int min);
@@ -113,6 +73,7 @@ private:
     int min;
     int max;
     QImage *image;
+    double maxColor;
     double scale;
 };
 
