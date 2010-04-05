@@ -120,8 +120,8 @@ public slots:
     }
     QVector<double> calculateAverages(const QVector<QRect> &rects,
             const QPoint &offset = QPoint(0, 0));
-    QVector<QVector<double> > calculateAverages(const QVector<QRect> &rects, int col,
-            const QPoint &offset = QPoint(0, 0));
+    QVector<QVector<double> > calculateAverages(const QVector<QRect> &rects,
+            int col, const QPoint &offset = QPoint(0, 0));
     double calculateAverage(QRect rect, const QPoint &offset = QPoint(0, 0));
     void drawAverages(bool shown);
     void drawImage(bool shown);
@@ -172,6 +172,7 @@ private:
     int lastCol;
     bool lookZ;
     bool ortho;
+    double maxColor;
 };
 
 #endif /* MYCANVAS_H_ */

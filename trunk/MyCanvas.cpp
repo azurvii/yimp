@@ -18,7 +18,8 @@
 #define DEFAULT_IMAGE_SCALE .1
 
 MyCanvas::MyCanvas(QWidget *parent) :
-    QGLWidget(QGLFormat(QGL::SampleBuffers), parent) {
+    QGLWidget(QGLFormat(QGL::SampleBuffers | QGL::DoubleBuffer | QGL::Rgba
+            | QGL::DepthBuffer), parent) {
     eyeX = DEFAULT_EYE_X;
     eyeY = DEFAULT_EYE_Y;
     eyeZ = DEFAULT_EYE_Z;
@@ -29,6 +30,7 @@ MyCanvas::MyCanvas(QWidget *parent) :
     imageScale = DEFAULT_IMAGE_SCALE;
     //	rotBase = DEFAULT_ROT_BASE;
     image = 0;
+    maxColor = 0;
     isMasked = false;
     showAverage = false;
     showImage = true;
@@ -41,6 +43,7 @@ MyCanvas::~MyCanvas() {
 
 void MyCanvas::renderGrayQImage(const QImage &image) {
     this->image = &image;
+    maxColor = (int) pow(2.0, (double) image.depth()) - 1;
     mask = QBitmap(image.width(), image.height());
     mask.clear();
     lastAverages.clear();
@@ -142,22 +145,85 @@ void MyCanvas::drawAverages() {
     //			lastCalculation.front()[0] * imageScale).arg(
     //			lastCalculation.front()[1] * imageScale).arg(
     //			lastCalculation.front()[2] * imageScale);
-    glPushAttrib( GL_CURRENT_BIT);
     glColor3f(1.0f, 1.0f, 1.0f);
-    glLineWidth(3.0f);
-    glBegin( GL_LINES);
+    glBegin( GL_QUADS);
     int h = image->height();
     QVector<double>::const_iterator itr = lastAverages.begin();
     QVector<QRect>::const_iterator itrR = lastRects.begin();
+    //    GLboolean lightEnabled;
+    //    GLboolean light0Enabled;
+    //    glGetBooleanv(GL_LIGHTING, &lightEnabled);
+    //    glGetBooleanv(GL_LIGHT0, &light0Enabled);
+    GLfloat n[6][3] = { { 0.0, 0.0, 1.0 }, { 0.0, 0.0, -1.0 },
+            { 1.0, 0.0, 0.0 }, { 0.0, -1.0, 0.0 }, { -1.0, 0.0, 0.0 }, { 0.0,
+                    1.0, 0.0 } };
     for (; itr != lastAverages.end() && itrR != lastRects.end(); ++itr, ++itrR) {
-        glVertex3f((itrR->x() + itrR->width() * .5) * imageScale, (h + 1
-                - (itrR->y() + itrR->height() * .5)) * imageScale, (*itr)
-                * imageScale);
-        glVertex3f((itrR->x() + itrR->width() * .5) * imageScale, (h + 1
-                - (itrR->y() + itrR->height() * .5)) * imageScale, 0.0);
+        GLfloat xy[4][2] = { { itrR->x() * imageScale, (h + 1 - itrR->y())
+                * imageScale }, { (itrR->x() + itrR->width()) * imageScale, (h
+                + 1 - itrR->y()) * imageScale }, { (itrR->x() + itrR->width())
+                * imageScale, (h + 1 - (itrR->y() + itrR->height()))
+                * imageScale }, { itrR->x() * imageScale, (h + 1 - (itrR->y()
+                + itrR->height())) * imageScale } };
+        GLfloat points[8][3] = { { xy[0][0], xy[0][1], (*itr) * imageScale }, {
+                xy[1][0], xy[1][1], (*itr) * imageScale }, { xy[2][0],
+                xy[2][1], (*itr) * imageScale }, { xy[3][0], xy[3][1], (*itr)
+                * imageScale }, { xy[0][0], xy[0][1], 0 }, { xy[1][0],
+                xy[1][1], 0 }, { xy[2][0], xy[2][1], 0 }, { xy[3][0], xy[3][1],
+                0 } };
+        GLfloat col[4] = { 0, 0, 0, 1 };
+        if ((*itr) == 0 || (*itr) == maxColor) {
+            col[0] = .7f;
+        } else {
+            col[0] = (GLfloat)(*itr) / maxColor;
+            col[1] = .7f;
+            col[2] = (maxColor - (GLfloat)(*itr)) / maxColor;
+        }
+        glMaterialfv(GL_FRONT, GL_AMBIENT, col);
+        //        glMaterialfv(GL_FRONT, GL_SPECULAR, col);
+        // Top
+        glNormal3fv(n[0]);
+        glVertex3fv(points[0]);
+        glVertex3fv(points[1]);
+        glVertex3fv(points[2]);
+        glVertex3fv(points[3]);
+        // Bottom
+        glNormal3fv(n[1]);
+        glVertex3fv(points[4]);
+        glVertex3fv(points[7]);
+        glVertex3fv(points[6]);
+        glVertex3fv(points[5]);
+        // Side 1
+        glNormal3fv(n[2]);
+        glVertex3fv(points[2]);
+        glVertex3fv(points[1]);
+        glVertex3fv(points[5]);
+        glVertex3fv(points[6]);
+        // Side 2
+        glNormal3fv(n[3]);
+        glVertex3fv(points[3]);
+        glVertex3fv(points[2]);
+        glVertex3fv(points[6]);
+        glVertex3fv(points[7]);
+        // Side 3
+        glNormal3fv(n[4]);
+        glVertex3fv(points[0]);
+        glVertex3fv(points[3]);
+        glVertex3fv(points[7]);
+        glVertex3fv(points[4]);
+        // Side 4
+        glNormal3fv(n[5]);
+        glVertex3fv(points[1]);
+        glVertex3fv(points[0]);
+        glVertex3fv(points[4]);
+        glVertex3fv(points[5]);
     }
     glEnd();
-    glPopAttrib();
+    //    if (!lightEnabled) {
+    //        glDisable(GL_LIGHTING);
+    //    }
+    //    if (!light0Enabled) {
+    //        glDisable(GL_LIGHT0);
+    //    }
 }
 
 void MyCanvas::lookDownZ(bool lookZ) {
@@ -173,7 +239,7 @@ void MyCanvas::setOrthoView(bool ortho) {
 
 void MyCanvas::initializeGL() {
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    glClearDepth(1.0f);
+    //    glClearDepth(1.0f);
     glEnable( GL_DEPTH_TEST);
     glShadeModel( GL_SMOOTH);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
@@ -183,6 +249,19 @@ void MyCanvas::initializeGL() {
 #ifdef Q_WS_MAC
     glEnable( GL_MULTISAMPLE);
 #endif
+    GLfloat lightPos[4] = { eyeX, eyeY, eyeZ, 0 };
+    GLfloat lightDiffuse[4] = { 1, 1, 1, 1 };
+    GLfloat black[4] = { 0, 0, 0, 1 };
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+    glMaterialfv(GL_FRONT, GL_AMBIENT, black);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, black);
+    glEnable( GL_LIGHT0);
+    glEnable( GL_LIGHTING);
+    //    glColorMaterial(GL_FRONT_AND_BACK, GL_EMISSION);
+    //    glEnable ( GL_COLOR_MATERIAL);
+    //    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+    //    glColorMaterial(GL_FRONT, GL_DIFFUSE);
 }
 
 void MyCanvas::paintGL() {
@@ -199,6 +278,7 @@ void MyCanvas::paintGL() {
         gluLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, .0, .0, 1.0);
     }
 
+    glDisable( GL_LIGHTING);
     // Draw the Axis
     glBegin( GL_LINES);
     // X
@@ -231,6 +311,7 @@ void MyCanvas::paintGL() {
     //	glColor3f(.9f, .9f, .0f);
     glVertex3f(.0f, .0f, 10000.0f);
     glEnd();
+    glEnable(GL_LIGHTING);
 
     if (showImage && image) {
         renderImage();
@@ -275,6 +356,8 @@ void MyCanvas::setEye(double x, double y, double z) {
     eyeX = x;
     eyeY = y;
     eyeZ = z;
+    GLfloat lightPos[4] = { eyeX, eyeY, eyeZ, 1.0 };
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 }
 
 void MyCanvas::setCenter(double x, double y, double z) {
@@ -347,6 +430,7 @@ void MyCanvas::renderImage() {
     int h = image->height();
     QImage maskImage = mask.toImage();
     QRgb color1Rgb = QColor(Qt::color1).rgb();
+    glDisable( GL_LIGHTING);
     glPointSize(1.0f);
     glBegin( GL_POINTS);
     for (int i = 0; i < w; ++i) {
@@ -357,14 +441,16 @@ void MyCanvas::renderImage() {
                 }
             }
             int gray = qGray(image->pixel(i, j));
-            if (gray == 0 || gray == 255) {
-                glColor3f(.6f, .0f, .0f);
+            if (gray == 0 || gray == maxColor) {
+                glColor3f(.7f, .0f, .0f);
             } else {
-                glColor3f(.0f, .6f, .0f);
+                glColor3f((GLfloat) gray / maxColor, .7f, (maxColor
+                        - (GLfloat) gray) / maxColor);
             }
             glVertex3f(i * imageScale, (h + 1 - j) * imageScale, gray
                     * imageScale);
         }
     }
     glEnd();
+    glEnable(GL_LIGHTING);
 }

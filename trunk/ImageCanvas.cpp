@@ -21,6 +21,7 @@ ImageCanvas::ImageCanvas(QWidget *parent) :
     showBg = false;
     min = max = 0;
     image = 0;
+    maxColor = 0;
     scale = 1.0;
 }
 
@@ -148,7 +149,7 @@ void ImageCanvas::scanBackground() {
     int lefty = bg.y();
     int rightx = leftx + bg.width();
     int righty = lefty + bg.height();
-    min = 255;
+    min = maxColor;
     max = 0;
     for (int i = leftx; i < rightx; ++i) {
         for (int j = lefty; j < righty; ++j) {
@@ -161,10 +162,83 @@ void ImageCanvas::scanBackground() {
             }
         }
     }
-    if (min < 255) {
+    if (min < maxColor) {
         emit backgroundMinChanged(min);
     }
     if (max > 0) {
         emit backgroundMaxChanged(max);
     }
+}
+
+void ImageCanvas::drawBackground(bool shown) {
+    showBg = shown;
+    scanBackground();
+}
+
+void ImageCanvas::loadGridStartPoint(const QPoint &startPoint) {
+    startX = startPoint.x();
+    startY = startPoint.y();
+}
+
+void ImageCanvas::loadGridAngle(double angle) {
+    this->angle = angle;
+}
+
+void ImageCanvas::clearLastPolygon() {
+    if (polygons.size() > 0) {
+        polygons.pop_back();
+    }
+}
+
+void ImageCanvas::clearBackground() {
+    bg = QRect();
+    showBg = false;
+}
+
+void ImageCanvas::setImage(QImage *image) {
+    this->image = image;
+    if (image) {
+        maxColor = (int) pow(2.0, (double) image->depth()) - 1;
+        this->setPixmap(QPixmap::fromImage(*image).scaled(image->width()
+                * scale, image->height() * scale));
+    } else {
+        maxColor = 0;
+    }
+}
+
+void ImageCanvas::setScale(double scale) {
+    this->scale = scale;
+}
+
+void ImageCanvas::drawBackground(int leftTopX, int leftTopY, int rightBottomX,
+        int rightBottomY) {
+    bg.setX(leftTopX);
+    bg.setY(leftTopY);
+    bg.setWidth(rightBottomX - leftTopX);
+    bg.setHeight(rightBottomY - leftTopY);
+    scanBackground();
+}
+
+void ImageCanvas::loadCircleGrid(const QVector<QRect> &circleGrid) {
+    this->circleGrid = circleGrid;
+}
+
+void ImageCanvas::loadPolygons(const QVector<QPolygon> &polygons) {
+    this->polygons = polygons;
+}
+
+QVector<QRect> ImageCanvas::getGrid() const {
+    return circleGrid;
+}
+
+QPoint ImageCanvas::getGridStartPoint() const {
+    return QPoint(startX, startY);
+}
+
+QVector<QPolygon> ImageCanvas::getPolygons() const {
+    return polygons;
+}
+
+double ImageCanvas::getGridAngle() const {
+    return angle;
 }

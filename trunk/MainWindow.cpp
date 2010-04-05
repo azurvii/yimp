@@ -381,7 +381,46 @@ void MainWindow::on_actionExportPspm_triggered() {
         QString line;
         for (int j = 0; j < output[i].size(); ++j) {
             line += QString::number(output[i][j]);
-            if (j != output[i].size()) {
+            if (j != output[i].size() - 1) {
+                line += ",";
+            }
+        }
+        ds << line << "\n";
+    }
+    log(tr("----------------Finished----------------"));
+}
+
+void MainWindow::on_actionExportAverages_triggered() {
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save averages"),
+            QDir::homePath(), tr("Comma-separated values (*.csv)"));
+    if (fileName.isEmpty()) {
+        return;
+    }
+
+    if (!fileName.endsWith(".csv", Qt::CaseInsensitive)) {
+        fileName += ".csv";
+    }
+    QFile file(fileName);
+    file.open(QFile::WriteOnly);
+    QTextStream ds(&file);
+
+    log(tr("Exporting averages..."));
+    QVector<QVector<double> > aves = ui.myCanvas->calculateAverages(
+            ui.imageCanvas->getGrid(), ui.gridColumnSpin->value(),
+            ui.imageCanvas->getGridStartPoint());
+
+    QVector<QVector<double> > output(aves.front().size());
+    for (int i = 0; i < aves.size(); ++i) {
+        for (int j = 0; j < aves.front().size(); ++j) {
+            output[j] << aves[i][j];
+        }
+    }
+
+    for (int i = 0; i < output.size(); ++i) {
+        QString line;
+        for (int j = 0; j < output[i].size(); ++j) {
+            line += QString::number(output[i][j]);
+            if (j != output[i].size() - 1) {
                 line += ",";
             }
         }
@@ -415,7 +454,7 @@ void MainWindow::on_actionCalculateAverage_triggered() {
         QString line;
         for (int j = 0; j < output[i].size(); ++j) {
             line += QString::number(output[i][j]);
-            if (j != output[i].size()) {
+            if (j != output[i].size() - 1) {
                 line += ",";
             }
         }
@@ -428,7 +467,7 @@ void MainWindow::on_actionSubtractBackground_triggered() {
     int bgValue;
     bool inv = ui.actionInvertedImage->isChecked();
     if (inv) {
-        bgValue = 255 - ui.bgMaxSpin->value();
+        bgValue = maxColor - ui.bgMinSpin->value();
     } else {
         bgValue = ui.bgMinSpin->value();
     }
@@ -490,6 +529,7 @@ void MainWindow::refineTriggered() {
 void MainWindow::loadImage(const QString fileName) {
     image.load(fileName);
     invertedImage = image;
+    maxColor = (int) pow(2.0, (double) image.depth()) - 1;
     invertedImage.invertPixels();
     ui.imageCanvas->setImage(&image);
     if (ui.actionInvertedImage->isChecked()) {

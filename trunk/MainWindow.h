@@ -44,6 +44,7 @@ public slots:
     void on_actionSelectBackground_toggled(bool select);
     void on_actionSubtractBackground_triggered();
     void on_actionExportPspm_triggered();
+    void on_actionExportAverages_triggered();
     void refineTriggered();
     void updateDrawings();
     void scaleImage(double scale);
@@ -77,6 +78,7 @@ private:
 private:
     Ui::MainWindow ui;
     QImage image;
+    double maxColor;
     QImage invertedImage;
     RefineType refineType;
     QPolygon polygon;
