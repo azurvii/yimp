@@ -11,6 +11,10 @@
 #include "ui_MainWindow.h"
 #include <QImage>
 #include <vector>
+#include <QList>
+
+class QStandardItemModel;
+class PositionPlotWidget;
 
 #ifndef slots
 #define slots
@@ -22,6 +26,7 @@ public:
     MainWindow(QWidget *parent = 0);
     virtual ~MainWindow();
     bool eventFilter(QObject * watched, QEvent * event);
+    QStringList getResidues(QPlainTextEdit * edit) const;
 
 public slots:
     void on_actionOpen_triggered();
@@ -29,6 +34,7 @@ public slots:
     void on_sensitivitySpin_valueChanged(double sen);
     void on_imageScaleSpin_valueChanged(double scale);
     //	void on_rotationBaseCombo_currentIndexChanged(int index);
+    void on_actionToggleMask_triggered();
     void on_actionApplyMask_triggered();
     void on_actionSaveMask_triggered();
     void on_actionSaveMaskImage_triggered();
@@ -45,10 +51,20 @@ public slots:
     void on_actionSubtractBackground_triggered();
     void on_actionExportPspm_triggered();
     void on_actionExportAverages_triggered();
+    void on_actionExportScanSitePssm_triggered();
+    void on_excludedResidueEdit_textChanged();
+    void on_phosphoEdit_textChanged();
+    void on_excludeResidueButton_clicked();
+    void on_phosphoButton_clicked();
     void refineTriggered();
     void updateDrawings();
+    void updatePlotScroll();
+    void updatePlot();
+    void updateMatrix();
     void scaleImage(double scale);
     void changeScale(double scale);
+    void resizePlot();
+    void about();
 
 signals:
 void scaleChanged(double factor);
@@ -84,6 +100,13 @@ private:
     QPolygon polygon;
     bool isFirstBgPoint;
     double imageScale;
+    QList<PositionPlotWidget *> posPlotWidgets;
+    static QStringList designRowHeader, designColHeader;
+    QStringList rowHeader, colHeader;
+    QStandardItemModel *averageModel;
+    QString lastBlotPath;
+    QString lastMaskPath;
+    bool maskOn;
 };
 
 #endif /* MAINWINDOW_H_ */

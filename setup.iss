@@ -6,14 +6,14 @@
 ; Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{A157440D-43BE-4800-B08D-DD9C07526869}
-AppName=yimp
-AppVerName=yimp alpha
+AppName=YIMP
+AppVerName=YIMP 0.2
 AppPublisher=Vincent
 AppPublisherURL=http://yimp.googlecode.com
 AppSupportURL=http://yimp.googlecode.com
 AppUpdatesURL=http://yimp.googlecode.com
-DefaultDirName={pf}\yimp
-DefaultGroupName=yimp
+DefaultDirName={pf}\YIMP
+DefaultGroupName=YIMP
 AllowNoIcons=yes
 LicenseFile=C:\yimp\LICENSE.txt
 OutputDir=C:\yimp
@@ -22,29 +22,27 @@ Compression=lzma
 SolidCompression=yes
 
 [Languages]
-Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: english; MessagesFile: compiler:Default.isl
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: desktopicon; Description: {cm:CreateDesktopIcon}; GroupDescription: {cm:AdditionalIcons}; Flags: unchecked
 
 [Files]
-Source: "C:\yimp\build\yimp.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\yimp\build\mingwm10.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\yimp\build\QtCore4.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\yimp\build\QtGui4.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\yimp\build\QtOpenGL4.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\yimp\build\libgcc_s_dw2-1.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: C:\yimp\build\yimp.exe; DestDir: {app}; Flags: ignoreversion
+Source: C:\qt-4.6.2\qt\bin\mingwm10.dll; DestDir: {app}; Flags: ignoreversion
+Source: C:\qt-4.6.2\qt\bin\QtCore4.dll; DestDir: {app}; Flags: ignoreversion
+Source: C:\qt-4.6.2\qt\bin\QtGui4.dll; DestDir: {app}; Flags: ignoreversion
+Source: C:\qt-4.6.2\qt\bin\QtOpenGL4.dll; DestDir: {app}; Flags: ignoreversion
+Source: C:\qt-4.6.2\qt\bin\libgcc_s_dw2-1.dll; DestDir: {app}; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
-Name: "{group}\yimp"; Filename: "{app}\yimp.exe"
-Name: "{group}\{cm:UninstallProgram,yimp}"; Filename: "{uninstallexe}"
-Name: "{commondesktop}\yimp"; Filename: "{app}\yimp.exe"; Tasks: desktopicon
+Name: {group}\YIMP; Filename: {app}\yimp.exe
+Name: {group}\{cm:UninstallProgram,yimp}; Filename: {uninstallexe}
+Name: {commondesktop}\YIMP; Filename: {app}\yimp.exe; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\yimp.exe"; Description: "{cm:LaunchProgram,yimp}"; Flags: nowait postinstall skipifsilent
-
-
+Filename: {app}\yimp.exe; Description: {cm:LaunchProgram,yimp}; Flags: nowait postinstall skipifsilent
 
 
 
