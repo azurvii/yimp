@@ -198,7 +198,11 @@ void ImageCanvas::clearBackground() {
 void ImageCanvas::setImage(QImage *image) {
     this->image = image;
     if (image) {
-        maxColor = (int) pow(2.0, (double) image->depth()) - 1;
+        int grayDepth = image->depth();
+        if (!image->isGrayscale()) {
+            grayDepth = grayDepth / 4;
+        }
+        maxColor = (int) pow(2.0, (double) grayDepth) - 1;
         this->setPixmap(QPixmap::fromImage(*image).scaled(image->width()
                 * scale, image->height() * scale));
     } else {

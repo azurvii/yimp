@@ -43,7 +43,13 @@ MyCanvas::~MyCanvas() {
 
 void MyCanvas::renderGrayQImage(const QImage &image) {
     this->image = &image;
-    maxColor = (int) pow(2.0, (double) image.depth()) - 1;
+    int grayDepth = image.depth();
+    //    qDebug() << grayDepth;
+    if (!image.isGrayscale()) {
+        grayDepth = grayDepth / 4;
+    }
+    maxColor = (int) pow(2.0, (double) grayDepth) - 1;
+    //    qDebug() << grayDepth;
     mask = QBitmap(image.width(), image.height());
     mask.clear();
     lastAverages.clear();
@@ -186,36 +192,36 @@ void MyCanvas::drawAverages() {
         glVertex3fv(points[1]);
         glVertex3fv(points[2]);
         glVertex3fv(points[3]);
-        // Bottom
-        glNormal3fv(n[1]);
-        glVertex3fv(points[4]);
-        glVertex3fv(points[7]);
-        glVertex3fv(points[6]);
-        glVertex3fv(points[5]);
-        // Side 1
-        glNormal3fv(n[2]);
-        glVertex3fv(points[2]);
-        glVertex3fv(points[1]);
-        glVertex3fv(points[5]);
-        glVertex3fv(points[6]);
-        // Side 2
-        glNormal3fv(n[3]);
-        glVertex3fv(points[3]);
-        glVertex3fv(points[2]);
-        glVertex3fv(points[6]);
-        glVertex3fv(points[7]);
-        // Side 3
-        glNormal3fv(n[4]);
-        glVertex3fv(points[0]);
-        glVertex3fv(points[3]);
-        glVertex3fv(points[7]);
-        glVertex3fv(points[4]);
-        // Side 4
-        glNormal3fv(n[5]);
-        glVertex3fv(points[1]);
-        glVertex3fv(points[0]);
-        glVertex3fv(points[4]);
-        glVertex3fv(points[5]);
+        //        // Bottom
+        //        glNormal3fv(n[1]);
+        //        glVertex3fv(points[4]);
+        //        glVertex3fv(points[7]);
+        //        glVertex3fv(points[6]);
+        //        glVertex3fv(points[5]);
+        //        // Side 1
+        //        glNormal3fv(n[2]);
+        //        glVertex3fv(points[2]);
+        //        glVertex3fv(points[1]);
+        //        glVertex3fv(points[5]);
+        //        glVertex3fv(points[6]);
+        //        // Side 2
+        //        glNormal3fv(n[3]);
+        //        glVertex3fv(points[3]);
+        //        glVertex3fv(points[2]);
+        //        glVertex3fv(points[6]);
+        //        glVertex3fv(points[7]);
+        //        // Side 3
+        //        glNormal3fv(n[4]);
+        //        glVertex3fv(points[0]);
+        //        glVertex3fv(points[3]);
+        //        glVertex3fv(points[7]);
+        //        glVertex3fv(points[4]);
+        //        // Side 4
+        //        glNormal3fv(n[5]);
+        //        glVertex3fv(points[1]);
+        //        glVertex3fv(points[0]);
+        //        glVertex3fv(points[4]);
+        //        glVertex3fv(points[5]);
     }
     glEnd();
     //    if (!lightEnabled) {
@@ -431,7 +437,7 @@ void MyCanvas::renderImage() {
     QImage maskImage = mask.toImage();
     QRgb color1Rgb = QColor(Qt::color1).rgb();
     glDisable( GL_LIGHTING);
-    glPointSize(1.0f);
+    //    glPointSize(1.0f);
     glBegin( GL_POINTS);
     for (int i = 0; i < w; ++i) {
         for (int j = 0; j < h; ++j) {
@@ -453,4 +459,94 @@ void MyCanvas::renderImage() {
     }
     glEnd();
     glEnable(GL_LIGHTING);
+}
+
+QVector<QVector<QRect> > MyCanvas::getLastRects(bool) const {
+    QVector<QVector<QRect> > results;
+    QVector<QRect> row;
+    for (QVector<QRect>::const_iterator itr = lastRects.begin(); itr
+            != lastRects.end(); ++itr) {
+        for (int i = 0; i < lastCol; ++i) {
+            row.push_back(*itr);
+        }
+        results.push_back(row);
+        row.clear();
+    }
+    return results;
+}
+
+const QVector<QRect> &MyCanvas::getLastRects() const {
+    return lastRects;
+}
+
+const QVector<int> &MyCanvas::getLastCounts() const {
+    return lastCounts;
+}
+
+int MyCanvas::getLastCol() const {
+    return lastCol;
+}
+
+bool MyCanvas::hasResults() const {
+    return lastAverages.size() > 0;
+}
+
+QVector<QVector<int> > MyCanvas::getLastCounts(bool) const {
+    QVector<QVector<int> > results;
+    QVector<int> row;
+    int rowCount = 0;
+    for (QVector<int>::const_iterator itr = lastCounts.begin(); itr
+            != lastCounts.end(); ++itr) {
+        row.push_back(*itr);
+        ++rowCount;
+        if (rowCount == lastCol) {
+            results.push_back(row);
+            row.clear();
+            rowCount = 0;
+        }
+    }
+    return results;
+}
+
+QVector<QVector<double> > MyCanvas::getLastAverages(bool) const {
+    QVector<QVector<double> > results;
+    QVector<double> row;
+    for (QVector<double>::const_iterator itr = lastAverages.begin(); itr
+            != lastAverages.end(); ++itr) {
+        for (int i = 0; i < lastCol; ++i) {
+            row.push_back(*itr);
+        }
+        results.push_back(row);
+        row.clear();
+    }
+    return results;
+}
+
+double MyCanvas::getSensitivity() const {
+    return sensitivity;
+}
+
+double MyCanvas::getImageScale() const {
+    return imageScale;
+}
+
+bool MyCanvas::getShowAverage() const {
+    return showAverage;
+}
+
+bool MyCanvas::getShowImage() const {
+    return showImage;
+}
+
+const QVector<double> &MyCanvas::getLastAverages() const {
+    return lastAverages;
+}
+
+void MyCanvas::setMask(const QBitmap &mask) {
+    isMasked = true;
+    this->mask = mask;
+}
+
+void MyCanvas::disableMask() {
+    isMasked = false;
 }

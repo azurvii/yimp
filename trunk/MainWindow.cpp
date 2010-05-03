@@ -7,8 +7,15 @@
 
 #include "MainWindow.h"
 #include <QtGui>
+#include "PositionPlotWidget.h"
+#include "DoubleDelegate.h"
+#include "stat.h"
 
-#define SAVE_FILE_HEADER ((quint32)0x293F29AC)
+// Arbitrary strings for file type identification purpose
+#define SAVE_FILE_HEADER_V1 ((quint32)0x293F29AC)
+#define SAVE_FILE_HEADER_V2 ((quint32)0x49CF2E98)
+QStringList MainWindow::designRowHeader;
+QStringList MainWindow::designColHeader;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent) {
@@ -25,7 +32,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui.myCanvas, SIGNAL(sensitivityChanged(double)), ui.sensitivitySpin, SLOT(setValue(double)));
     connect(ui.myCanvas, SIGNAL(imageScaleChanged(double)), ui.imageScaleSpin, SLOT(setValue(double)));
     connect(ui.gridColumnSpin, SIGNAL(valueChanged(int)), SLOT(updateDrawings()));
+    connect(ui.gridColumnSpin, SIGNAL(valueChanged(int)), SLOT(updatePlotScroll()));
     connect(ui.gridRowSpin, SIGNAL(valueChanged(int)), SLOT(updateDrawings()));
+    connect(ui.gridRowSpin, SIGNAL(valueChanged(int)), SLOT(updatePlotScroll()));
     connect(ui.gridRadiusSpin, SIGNAL(valueChanged(double)), SLOT(updateDrawings()));
     connect(ui.gridStartXSpin, SIGNAL(valueChanged(double)), SLOT(updateDrawings()));
     connect(ui.gridStartYSpin, SIGNAL(valueChanged(double)), SLOT(updateDrawings()));
@@ -46,6 +55,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui.imageCanvas, SIGNAL(backgroundMinChanged(int)), ui.bgMinSpin, SLOT(setValue(int)));
     connect(this, SIGNAL(scaleChanged(double)), SLOT(changeScale(double)));
     connect(ui.actionInvertedImage, SIGNAL(toggled(bool)), SLOT(updateDrawings()));
+    connect(ui.plotHeightSpin, SIGNAL(valueChanged(int)), SLOT(resizePlot()));
+    connect(ui.plotWidthSpin, SIGNAL(valueChanged(int)), SLOT(resizePlot()));
+    connect(ui.isScansite2MatrixCheck, SIGNAL(toggled(bool)), SLOT(updateMatrix()));
 
     QSettings settings;
     settings.beginGroup("GUI");
@@ -57,12 +69,25 @@ MainWindow::MainWindow(QWidget *parent) :
         ui.canvasSplitter->restoreState(
                 settings.value("canvasSplitterState").toByteArray());
     }
+    if (settings.contains("matrixSplitterState")) {
+        ui.matrixSplitter->restoreState(
+                settings.value("matrixSplitterState").toByteArray());
+    }
+    if (settings.contains("plotSplitterState")) {
+        ui.plotSplitter->restoreState(
+                settings.value("plotSplitterState").toByteArray());
+    }
     if (settings.contains("windowGeometry")) {
         restoreGeometry(settings.value("windowGeometry").toByteArray());
     }
     if (settings.contains("windowState")) {
         restoreState(settings.value("windowState").toByteArray());
     }
+    if (settings.contains("currentTab")) {
+        ui.tabWidget->setCurrentIndex(settings.value("currentTab", 0).toInt());
+    }
+    lastBlotPath = settings.value("lastBlotPath", QDir::homePath()).toString();
+    lastMaskPath = settings.value("lastMaskPath", QDir::homePath()).toString();
     settings.endGroup();
 
     ui.imageScaleSpin->setValue(ui.myCanvas->getImageScale());
@@ -72,6 +97,23 @@ MainWindow::MainWindow(QWidget *parent) :
     imageScale = 1.0;
     refineType = REF_POINTER;
     isFirstBgPoint = false;
+    averageModel = 0;
+
+    if (designRowHeader.size() == 0) {
+        designRowHeader << "-5" << "-4" << "-3" << "-2" << "-1" << "+1" << "+2"
+                << "+3" << "+4";
+    }
+    if (designColHeader.size() == 0) {
+        designColHeader << "K" << "I" << "H" << "G" << "F" << "E" << "D" << "C"
+                << "A" << "V" << "T" << "S" << "R" << "Q" << "P" << "N" << "M"
+                << "L" << "pY" << "pT" << "Y" << "W";
+    }
+    rowHeader = designRowHeader;
+    colHeader = designColHeader;
+
+    DoubleDelegate *delegate = new DoubleDelegate(this);
+    ui.matrixTable->setItemDelegate(delegate);
+    maskOn = false;
 }
 
 MainWindow::~MainWindow() {
@@ -97,20 +139,20 @@ bool MainWindow::eventFilter(QObject * watched, QEvent * event) {
                     ui.actionSelectBackground->toggle();
                 }
             } else {
-                const QPixmap *pmap = ui.imageCanvas->pixmap();
+                //                const QPixmap *pmap = ui.imageCanvas->pixmap();
                 switch (refineType) {
                 case REF_ELLIPSE:
                 case REF_POINTER:
-                    if (pmap && x < pmap->width() && y < pmap->height()) {
-                        QRgb rgb = pmap->toImage().pixel(x, y);
-                        showStatus(
-                                tr("Color @(%1,%2) is (%3,%4,%5), grayscale %6").arg(
-                                        x).arg(y).arg(qRed(rgb)).arg(
-                                        qGreen(rgb)).arg(qBlue(rgb)).arg(qGray(
-                                        rgb)));
-                    } else {
-                        showStatus(tr("Position (%1,%2)").arg(x).arg(y));
-                    }
+                    //                    if (pmap && x < pmap->width() && y < pmap->height()) {
+                    //                        QRgb rgb = pmap->toImage().pixel(x, y);
+                    //                        showStatus(
+                    //                                tr("Color @(%1,%2) is (%3,%4,%5), grayscale %6").arg(
+                    //                                        x).arg(y).arg(qRed(rgb)).arg(
+                    //                                        qGreen(rgb)).arg(qBlue(rgb)).arg(qGray(
+                    //                                        rgb)));
+                    //                    } else {
+                    showStatus(tr("Position (%1,%2)").arg(x).arg(y));
+                    //                    }
                     break;
                 case REF_POLYGON:
                     polygon << QPoint(x, y);
@@ -141,8 +183,9 @@ bool MainWindow::eventFilter(QObject * watched, QEvent * event) {
 
 void MainWindow::on_actionOpen_triggered() {
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open Image"),
-            QDir::homePath(), tr("Images (*.png *.jpg *.bmp *.tif *.tiff)"));
+            lastBlotPath, tr("Images (*.png *.jpg *.bmp *.tif *.tiff)"));
     if (!fileName.isEmpty()) {
+        lastBlotPath = fileName;
         ui.bgStartXSpin->setValue(0);
         ui.bgStartYSpin->setValue(0);
         ui.bgEndXSpin->setValue(0);
@@ -157,10 +200,14 @@ void MainWindow::on_actionOpen_triggered() {
         ui.bgStartYSpin->setRange(0, image.height() - 1);
         ui.bgEndXSpin->setRange(0, image.width() - 1);
         ui.bgEndYSpin->setRange(0, image.height() - 1);
+        ui.gridGroup->setChecked(false);
     }
 }
 
 void MainWindow::on_actionInvert_triggered() {
+    if (image.isNull()) {
+        return;
+    }
     image.invertPixels();
     invertedImage.invertPixels();
     ui.imageCanvas->setImage(&image);
@@ -173,10 +220,16 @@ void MainWindow::on_sensitivitySpin_valueChanged(double sen) {
 }
 
 void MainWindow::on_imageScaleSpin_valueChanged(double scale) {
+    if (image.isNull()) {
+        return;
+    }
     ui.myCanvas->setImageScale(scale);
 }
 
 void MainWindow::on_actionShowAverage_toggled(bool shown) {
+    if (image.isNull()) {
+        return;
+    }
     if (!ui.myCanvas->hasResults()) {
         ui.actionCalculateAverage->trigger();
     }
@@ -184,6 +237,9 @@ void MainWindow::on_actionShowAverage_toggled(bool shown) {
 }
 
 void MainWindow::on_actionCanvasShowImage_toggled(bool shown) {
+    if (image.isNull()) {
+        return;
+    }
     ui.myCanvas->drawImage(shown);
 }
 
@@ -192,6 +248,9 @@ void MainWindow::on_actionResetView_triggered() {
 }
 
 void MainWindow::on_actionShowCounts_triggered() {
+    if (image.isNull()) {
+        return;
+    }
     if (!ui.myCanvas->hasResults()) {
         ui.actionCalculateAverage->trigger();
     }
@@ -210,11 +269,17 @@ void MainWindow::on_actionShowCounts_triggered() {
 }
 
 void MainWindow::on_actionClearLastRefinement_triggered() {
+    if (image.isNull()) {
+        return;
+    }
     ui.imageCanvas->clearLastPolygon();
     ui.imageCanvas->update();
 }
 
 void MainWindow::on_actionSelectBackground_toggled(bool select) {
+    if (image.isNull()) {
+        return;
+    }
     isFirstBgPoint = select;
     ui.imageCanvas->drawBackground(!select);
 }
@@ -257,22 +322,49 @@ void MainWindow::updateDrawings() {
     ui.imageCanvas->update();
 }
 
+void MainWindow::on_actionToggleMask_triggered() {
+    if (image.isNull()) {
+        return;
+    }
+    if (maskOn) {
+        ui.myCanvas->disableMask();
+        ui.myCanvas->update();
+    } else {
+        QBitmap mask = ui.imageCanvas->getMask();
+        ui.myCanvas->setMask(mask);
+        //  QPixmap pmap = *ui.imageCanvas->pixmap();
+        //  pmap.setMask(mask);
+        //  ui.imageCanvas->setPixmap(pmap);
+        ui.myCanvas->update();
+        //  ui.imageCanvas->update();
+    }
+    maskOn = !maskOn;
+}
+
 void MainWindow::on_actionApplyMask_triggered() {
+    if (image.isNull()) {
+        return;
+    }
+    maskOn = true;
     QBitmap mask = ui.imageCanvas->getMask();
     ui.myCanvas->setMask(mask);
-    //	QPixmap pmap = *ui.imageCanvas->pixmap();
-    //	pmap.setMask(mask);
-    //	ui.imageCanvas->setPixmap(pmap);
+    //  QPixmap pmap = *ui.imageCanvas->pixmap();
+    //  pmap.setMask(mask);
+    //  ui.imageCanvas->setPixmap(pmap);
     ui.myCanvas->update();
-    //	ui.imageCanvas->update();
+    //  ui.imageCanvas->update();
 }
 
 void MainWindow::on_actionSaveMask_triggered() {
-    QString fileName = QFileDialog::getSaveFileName(this, tr("Save mask"),
-            QDir::homePath(), tr("YIMP Masks (*.yim)"));
+    if (image.isNull()) {
+        return;
+    }
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save project"),
+            lastMaskPath, tr("YIMP Projects (*.yim)"));
     if (fileName.isEmpty()) {
         return;
     }
+    lastMaskPath = fileName;
     if (!fileName.endsWith(".yim", Qt::CaseInsensitive)) {
         fileName += ".yim";
     }
@@ -280,13 +372,15 @@ void MainWindow::on_actionSaveMask_triggered() {
     file.open(QFile::WriteOnly);
     QDataStream ds(&file);
     //    ds.setVersion(QDataStream::Qt_4_6);
-    ds << SAVE_FILE_HEADER;
+    ds << SAVE_FILE_HEADER_V1;
     //	ds << ui.imageCanvas->getGridStartPoint();
     //	ds << ui.imageCanvas->getGrid();
     ds << ui.imageCanvas->getPolygons();
     //	ds << ui.imageCanvas->getGridAngle();
-    ds << ui.gridColumnSpin->value();
-    ds << ui.gridRowSpin->value();
+    int cols = ui.gridColumnSpin->value();
+    int rows = ui.gridRowSpin->value();
+    ds << cols;
+    ds << rows;
     ds << ui.gridAngleSpin->value();
     ds << ui.gridStartXSpin->value();
     ds << ui.gridStartYSpin->value();
@@ -296,28 +390,36 @@ void MainWindow::on_actionSaveMask_triggered() {
 }
 
 void MainWindow::on_actionSaveMaskImage_triggered() {
+    if (image.isNull()) {
+        return;
+    }
     QString fileName = QFileDialog::getSaveFileName(this,
-            tr("Save mask image"), QDir::homePath(), tr(
+            tr("Save mask image"), lastMaskPath, tr(
                     "Images (*.jpg *.png *.tif *.tiff)"));
     if (fileName.isEmpty()) {
         return;
     }
+    lastMaskPath = fileName;
     ui.imageCanvas->getMask().save(fileName);
 }
 
 void MainWindow::on_actionLoadMask_triggered() {
+    if (image.isNull()) {
+        return;
+    }
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open mask"),
-            QDir::homePath(), tr("YIMP Masks (*.yim)"));
+            lastMaskPath, tr("YIMP Masks (*.yim)"));
     if (fileName.isEmpty()) {
         return;
     }
+    lastMaskPath = fileName;
     QFile file(fileName);
     file.open(QFile::ReadOnly);
     QDataStream ds(&file);
     //    ds.setVersion(QDataStream::Qt_4_6);
     quint32 header;
     ds >> header;
-    if (header != SAVE_FILE_HEADER) {
+    if (!(header == SAVE_FILE_HEADER_V1 || header == SAVE_FILE_HEADER_V2)) {
         QMessageBox::critical(this, tr("Error"), tr(
                 "This is not a valid mask file."));
         return;
@@ -342,12 +444,19 @@ void MainWindow::on_actionLoadMask_triggered() {
     ui.gridEndXSpin->setValue(endX);
     ui.gridEndYSpin->setValue(endY);
     ui.gridRadiusSpin->setValue(radius);
+    //    if (header == SAVE_FILE_HEADER_V2) {
+    //
+    //    }
     //	ui.imageCanvas->update();
+    ui.gridGroup->setChecked(true);
     updateDrawings();
     ui.actionApplyMask->trigger();
 }
 
 void MainWindow::on_actionExportPspm_triggered() {
+    if (image.isNull()) {
+        return;
+    }
     QString fileName = QFileDialog::getSaveFileName(this, tr("Save PSPM"),
             QDir::homePath(), tr("Comma-separated values (*.csv)"));
     if (fileName.isEmpty()) {
@@ -391,6 +500,9 @@ void MainWindow::on_actionExportPspm_triggered() {
 }
 
 void MainWindow::on_actionExportAverages_triggered() {
+    if (image.isNull()) {
+        return;
+    }
     QString fileName = QFileDialog::getSaveFileName(this, tr("Save averages"),
             QDir::homePath(), tr("Comma-separated values (*.csv)"));
     if (fileName.isEmpty()) {
@@ -429,27 +541,93 @@ void MainWindow::on_actionExportAverages_triggered() {
     log(tr("----------------Finished----------------"));
 }
 
+void MainWindow::on_actionExportScanSitePssm_triggered() {
+    if (image.isNull()) {
+        return;
+    }
+    QString fileName = QFileDialog::getSaveFileName(this, tr(
+            "Save ScanSite PSSM"), QDir::homePath(),
+            tr("ScanSite PSSM (*.txt)"));
+    if (fileName.isEmpty()) {
+        return;
+    }
+
+    if (!fileName.endsWith(".txt", Qt::CaseInsensitive)) {
+        fileName += ".txt";
+    }
+    QFile file(fileName);
+    file.open(QFile::WriteOnly);
+    QTextStream ds(&file);
+
+    log(tr("Exporting ScanSite PSSM..."));
+    QStandardItemModel *theModel =
+            static_cast<QStandardItemModel *> (ui.matrixTable->model());
+    QString hheader;
+    for (int j = 0; j < theModel->columnCount(); ++j) {
+        hheader
+                += theModel->headerData(j, Qt::Horizontal, Qt::DisplayRole).toString();
+        if (j < theModel->columnCount() - 1) {
+            hheader += "\t";
+        }
+    }
+    ds << hheader << "\n";
+    for (int i = 0; i < theModel->rowCount(); ++i) {
+        QString line;
+        for (int j = 0; j < theModel->columnCount(); ++j) {
+            line += QString::number(
+                    theModel->item(i, j)->data(Qt::DisplayRole).toDouble());
+            if (j < theModel->columnCount() - 1) {
+                line += "\t";
+            }
+        }
+        ds << line << "\n";
+    }
+    log(tr("----------------Finished----------------"));
+}
+
 void MainWindow::on_actionClearRefinement_triggered() {
+    if (image.isNull()) {
+        return;
+    }
     ui.imageCanvas->clearPolygons();
     ui.actionApplyMask->trigger();
 }
 
 void MainWindow::on_actionClearGrid_triggered() {
+    if (image.isNull()) {
+        return;
+    }
     ui.imageCanvas->clearCircleGrid();
     ui.actionApplyMask->trigger();
 }
 
 void MainWindow::on_actionCalculateAverage_triggered() {
+    if (image.isNull()) {
+        return;
+    }
     QVector<QVector<double> > aves = ui.myCanvas->calculateAverages(
             ui.imageCanvas->getGrid(), ui.gridColumnSpin->value(),
             ui.imageCanvas->getGridStartPoint());
     log(tr("Averages:"));
+    if (averageModel) {
+        delete averageModel;
+    }
+    averageModel = new QStandardItemModel(rowHeader.size(), colHeader.size());
+    averageModel->setHorizontalHeaderLabels(colHeader);
+    averageModel->setVerticalHeaderLabels(rowHeader);
+    QStandardItem *item;
     QVector<QVector<double> > output(aves.front().size());
     for (int i = 0; i < aves.size(); ++i) {
         for (int j = 0; j < aves.front().size(); ++j) {
             output[j] << aves[i][j];
+            item = new QStandardItem;
+            item->setData(aves[i][j], Qt::DisplayRole);
+            averageModel->setItem(i, j, item);
         }
     }
+    updatePlotScroll();
+    updatePlot();
+    updateMatrix();
     for (int i = 0; i < output.size(); ++i) {
         QString line;
         for (int j = 0; j < output[i].size(); ++j) {
@@ -464,6 +642,9 @@ void MainWindow::on_actionCalculateAverage_triggered() {
 }
 
 void MainWindow::on_actionSubtractBackground_triggered() {
+    if (image.isNull()) {
+        return;
+    }
     int bgValue;
     bool inv = ui.actionInvertedImage->isChecked();
     if (inv) {
@@ -508,7 +689,12 @@ void MainWindow::closeEvent(QCloseEvent *event) {
     QSettings settings;
     settings.beginGroup("GUI");
     settings.setValue("imageSplitterState", ui.imageSplitter->saveState());
+    settings.setValue("plotSplitterState", ui.plotSplitter->saveState());
     settings.setValue("canvasSplitterState", ui.canvasSplitter->saveState());
+    settings.setValue("matrixSplitterState", ui.matrixSplitter->saveState());
+    settings.setValue("lastBlotPath", lastBlotPath);
+    settings.setValue("lastMaskPath", lastMaskPath);
+    settings.setValue("currentTab", ui.tabWidget->currentIndex());
     settings.setValue("windowGeometry", saveGeometry());
     settings.setValue("windowState", saveState());
     QMainWindow::closeEvent(event);
@@ -527,9 +713,15 @@ void MainWindow::refineTriggered() {
 }
 
 void MainWindow::loadImage(const QString fileName) {
+    rowHeader = designRowHeader;
+    colHeader = designColHeader;
     image.load(fileName);
     invertedImage = image;
-    maxColor = (int) pow(2.0, (double) image.depth()) - 1;
+    int grayDepth = image.depth();
+    if (!image.isGrayscale()) {
+        grayDepth = grayDepth / 4;
+    }
+    maxColor = (int) pow(2.0, (double) grayDepth) - 1;
     invertedImage.invertPixels();
     ui.imageCanvas->setImage(&image);
     if (ui.actionInvertedImage->isChecked()) {
@@ -598,4 +790,199 @@ void MainWindow::changeScale(double scale) {
     ui.scaleSpin->setValue(scale);
     ui.imageCanvas->setScale(scale);
     updateDrawings();
+}
+
+void MainWindow::updatePlotScroll() {
+    if (ui.plotScroll->widget()) {
+        delete ui.plotScroll->takeWidget();
+    }
+    QWidget *cWidget = new QWidget(this);
+    QVBoxLayout *vlayout = new QVBoxLayout;
+    posPlotWidgets.clear();
+    PositionPlotWidget *ppw;
+    for (int i = 0; i < rowHeader.size(); ++i) {
+        ppw = new PositionPlotWidget(this);
+        vlayout->addWidget(ppw);
+        ppw->setRange(0, maxColor);
+        ppw->setPlotName(rowHeader[i]);
+        //        connect(ui.plotHeightSpin, SIGNAL(valueChanged(int)), ppw, SLOT(setPlotHeight(int)));
+        //        connect(ui.plotWidthSpin, SIGNAL(valueChanged(int)), ppw, SLOT(setPlotWidth(int)));
+        connect(ui.plotTickSpin, SIGNAL(valueChanged(int)), ppw, SLOT(setAxisTicks(int)));
+        connect(ppw, SIGNAL(madsChanged(double)), SLOT(updateMatrix()));
+        posPlotWidgets.append(ppw);
+    }
+    cWidget->setLayout(vlayout);
+    ui.plotScroll->setWidget(cWidget);
+    resizePlot();
+}
+
+void MainWindow::updatePlot() {
+    if (averageModel) {
+        int rows = averageModel->rowCount();
+        int cols = averageModel->columnCount();
+        QStringList rowString;
+        QList<double> rowData;
+        for (int i = 0; i < rows; ++i) {
+            rowString.clear();
+            rowData.clear();
+            for (int j = 0; j < cols; ++j) {
+                rowString << colHeader[j];
+                rowData.append(
+                        averageModel->item(i, j)->data(Qt::DisplayRole).toDouble());
+            }
+            posPlotWidgets[i]->setData(rowString, rowData);
+            posPlotWidgets[i]->setPlotName(rowHeader[i]);
+            posPlotWidgets[i]->update();
+        }
+    }
+}
+
+void MainWindow::updateMatrix() {
+    QStandardItemModel *displayModel;
+    if (ui.isScansite2MatrixCheck->isChecked()) {
+        displayModel = new QStandardItemModel(15, averageModel->columnCount());
+        QStringList dispRowHeader;
+        QStringList dispColHeader = colHeader;
+        dispRowHeader << "-7" << "-6" << "-5" << "-4" << "-3" << "-2" << "-1"
+                << "0" << "+1" << "+2" << "+3" << "+4" << "+5" << "+6" << "+7";
+        displayModel->setVerticalHeaderLabels(dispRowHeader);
+        displayModel->insertColumn(displayModel->columnCount()); // Add terminal penalty column
+        dispColHeader << "*";
+        displayModel->setHorizontalHeaderLabels(dispColHeader);
+        QStandardItem *item;
+        QStringList phosphoList = getResidues(ui.phosphoEdit);
+        QList<int> phosphoIndeces;
+        for (int j = 0; j < phosphoList.size(); ++j) {
+            phosphoIndeces << colHeader.indexOf(phosphoList[j]);
+        }
+        for (int i = 0; i < displayModel->rowCount(); ++i) {
+            if ((i >= 2 && i <= 6) || (i >= 8 && i <= 11)) {
+                // real data go here
+                int ssRow = i - 2;
+                if (i > 7) {
+                    --ssRow;
+                }
+                // Get the denominator
+                double posMedian = posPlotWidgets[ssRow]->getMedian();
+                double posMads = posPlotWidgets[ssRow]->getMads();
+                double posMad = posPlotWidgets[ssRow]->getMad();
+                double upBound = posMedian + posMad * posMads;
+                double loBound = posMedian - posMad * posMads;
+                QList<double> data;
+                for (int j = 0; j < averageModel->columnCount(); ++j) {
+                    data
+                            << averageModel->item(ssRow, j)->data(
+                                    Qt::DisplayRole).toDouble();
+                }
+                QList<double> nonsel;
+                for (int j = 0; j < data.size(); ++j) {
+                    if (phosphoIndeces.contains(ssRow)) {
+                        nonsel << data[j];
+                    } else if (data[j] <= upBound && data[j] >= loBound) {
+                        nonsel << data[j];
+                    }
+                }
+                double denom = mean(nonsel);
+                for (int j = 0; j < displayModel->columnCount() - 1; ++j) {
+                    item = new QStandardItem;
+                    if (j < averageModel->columnCount()) {
+                        item->setData(averageModel->item(ssRow, j)->data(
+                                Qt::DisplayRole).toDouble() / denom,
+                                Qt::DisplayRole);
+                    } else {
+                        item->setData(0, Qt::DisplayRole);
+                    }
+                    displayModel->setItem(i, j, item);
+                }
+            } else {
+                // Padding zeros or ones
+                for (int j = 0; j < displayModel->columnCount() - 1; ++j) {
+                    if (i == 7) {
+                        if (phosphoIndeces.contains(j)) {
+                            item = new QStandardItem;
+                            item->setData(21, Qt::DisplayRole);
+                            displayModel->setItem(i, j, item);
+                        } else {
+                            item = new QStandardItem;
+                            item->setData(0, Qt::DisplayRole);
+                            displayModel->setItem(i, j, item);
+                        }
+                    } else {
+                        item = new QStandardItem;
+                        item->setData(1, Qt::DisplayRole);
+                        displayModel->setItem(i, j, item);
+                    }
+                }
+            }
+            // Terminal penalty column
+            item = new QStandardItem;
+            item->setData(0.0001, Qt::DisplayRole);
+            displayModel->setItem(i, displayModel->columnCount() - 1, item);
+        }
+    } else {
+        displayModel = averageModel;
+    }
+    ui.matrixTable->setModel(displayModel);
+}
+
+void MainWindow::resizePlot() {
+    int plotH = ui.plotHeightSpin->value();
+    int plotW = ui.plotWidthSpin->value();
+    QWidget *cWidget = ui.plotScroll->widget();
+    cWidget->setFixedHeight(plotH * rowHeader.size());
+    cWidget->setFixedWidth(plotW);
+}
+
+void MainWindow::on_excludedResidueEdit_textChanged() {
+    ui.excludedResidueLabel->setText(getResidues(ui.excludedResidueEdit).join(
+            ", "));
+}
+
+void MainWindow::on_phosphoEdit_textChanged() {
+    ui.phosphoLabel->setText(getResidues(ui.phosphoEdit).join(", "));
+}
+
+QStringList MainWindow::getResidues(QPlainTextEdit * edit) const {
+    QStringList toBeProcessed = edit->toPlainText().split(QRegExp("\\W+"),
+            QString::SkipEmptyParts);
+    QStringList returnList;
+    for (int i = 0; i < toBeProcessed.size(); ++i) {
+        if (colHeader.contains(toBeProcessed[i])) {
+            returnList << toBeProcessed[i];
+        }
+    }
+    return returnList;
+}
+
+void MainWindow::on_excludeResidueButton_clicked() {
+    QStringList exList = getResidues(ui.excludedResidueEdit);
+    QList<int> colIndeces;
+    for (int i = 0; i < exList.size(); ++i) {
+        colIndeces << colHeader.indexOf(exList[i]);
+    }
+    qSort(colIndeces);
+    int curIndex;
+    while (!colIndeces.isEmpty()) {
+        curIndex = colIndeces.takeLast();
+        colHeader.removeAt(curIndex);
+        averageModel->removeColumn(curIndex);
+    }
+    updatePlotScroll();
+    updatePlot();
+    updateMatrix();
+    on_excludedResidueEdit_textChanged();
+}
+
+void MainWindow::on_phosphoButton_clicked() {
+    updateMatrix();
+}
+
+void MainWindow::about() {
+    QMessageBox::about(
+            this,
+            tr("About YIMP"),
+            tr(
+                    "<b>YIMP</b> is developed in Yaffe Lab.\n"
+                        "It is designed for generating <a href=\"http://scansite.mit.edu\">ScanSite</a> matrices from "
+                        "analyzing dot blot images."));
 }
