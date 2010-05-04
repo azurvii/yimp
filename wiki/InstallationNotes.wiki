@@ -9,14 +9,16 @@
   * Run the yimp.app.
 
 *NOTE:
-Mac OS X 10.5 should be able to run this application, but not tested yet.
-10.4 and before are supposed NOT capable of running this app, but not tested either.*
+Not tested on 10.5 and before. But 10.5 should work, 10.4 and before should not.*
 
 
 == Windows _(Tested on Windows XP SP3)_ ==
 
   * Download setup.exe.
   * Install and run it from Start menu.
+
+*NOTE:
+Supposedly it will work on Windows Vista and 7.*
 
 
 == Linux _(Tested on Ubuntu 10.04)_ ==
@@ -28,4 +30,4 @@ Mac OS X 10.5 should be able to run this application, but not tested yet.
   * Unpack the src tarball file.
   * Run the command inside the source directory:
     `qmake && make`
-  * The executable is in the build subdirectory.
+  * The executable is in the `build` subdirectory.
