@@ -12,13 +12,10 @@
 Not tested on 10.5 and before. But 10.5 should work, 10.4 and before should not.*
 
 
-== Windows _(Tested on Windows XP SP3)_ ==
+== Windows _(Tested on Windows XP SP3, Vista, and 7)_ ==
 
   * Download setup.exe.
   * Install and run it from Start menu.
-
-*NOTE:
-Supposedly it will work on Windows Vista and 7.*
 
 
 == Linux _(Tested on Ubuntu 10.04)_ ==
