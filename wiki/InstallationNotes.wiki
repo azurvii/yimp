@@ -5,7 +5,7 @@
 
   * Download yimp-mac.zip.
   * Unzip.
-  * Move *.framework folders to /Library/Frameworks.
+  * Move all .framework folders to /Library/Frameworks.
   * Run the yimp.app.
 
 
