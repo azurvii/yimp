@@ -19,11 +19,11 @@ Mac OS X 10.5 should be able to run this application, but not tested yet.
   * Install and run it from Start menu.
 
 
-== Linux _(Tested on Ubuntu 9.10)_ ==
+== Linux _(Tested on Ubuntu 10.04)_ ==
 
   * Give various distributions, no binary is provided; you need to compile it yourself.
-  * Download yimp.src.tar.gz.
-  * Install G++, make, and Qt development headers and libraries on your system. For example, in Ubuntu, run the command:
+  * Download yimp-src.tar.gz.
+  * Install g++, make, and Qt development tools (at least 4.5, which has QtWebKit) on your system. For example, in Ubuntu, run the command:
     `sudo apt-get install g++ qt4-dev-tools libqt4-dev make`
   * Unpack the src tarball file.
   * Run the command inside the source directory:
