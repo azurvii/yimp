@@ -2,6 +2,7 @@
 #labels Featured,Phase-Deploy
 
 == Mac OS X _(Tested on Mac OS X 10.6.2)_ ==
+*NOTE: Mac OS X 10.5 should be able to run this application, but not tested yet. 10.4 and before are supposed NOT be able to run this app, but not tested either.*
 
   * Download yimp-mac.zip.
   * Unzip.
