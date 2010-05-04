@@ -3,8 +3,10 @@
 
 == Mac OS X _(Tested on Mac OS X 10.6.2)_ ==
 
-  * Download yimp.app.zip.
-  * Unzip and run the app.
+  * Download yimp-mac.zip.
+  * Unzip.
+  * Move *.framework folders to /Library/Frameworks.
+  * Run the yimp.app.
 
 
 == Windows _(Tested on Windows XP SP3)_ ==
