@@ -25,7 +25,7 @@ Supposedly it will work on Windows Vista and 7.*
 
   * Give various distributions, no binary is provided; you need to compile it yourself.
   * Download yimp-src.tar.gz.
-  * Install g++, make, and Qt development tools (at least 4.5, which has QtWebKit) on your system. For example, in Ubuntu, run the command:
+  * Install g++, make, and Qt development tools (at least 4.5) on your system. For example, in Ubuntu, run the command:
     `sudo apt-get install g++ qt4-dev-tools libqt4-dev make`
   * Unpack the src tarball file.
   * Run the command inside the source directory:
