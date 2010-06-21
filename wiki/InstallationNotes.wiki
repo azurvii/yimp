@@ -16,6 +16,7 @@
 
 
 == Linux _(Tested on Ubuntu 10.04 x86)_ ==
+(it doesn't support x64 yet)
 
   * Give various distributions, no binary is provided; you need to compile it yourself.
   * Download yimp-src.tar.gz.
