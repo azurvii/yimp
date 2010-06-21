@@ -1,7 +1,7 @@
 /*
  * MainWindow.h
  *
- *  Created on: Feb 26, 2010
+ *  Created on: Jun 2, 2010
  *      Author: Vincent
  */
 
@@ -9,104 +9,79 @@
 #define MAINWINDOW_H_
 
 #include "ui_MainWindow.h"
-#include <QImage>
-#include <vector>
-#include <QList>
+#include "Processor.h"
+#include "Patch.h"
 
-class QStandardItemModel;
 class PositionPlotWidget;
-
-#ifndef slots
-#define slots
-#endif
 
 class MainWindow: public QMainWindow {
 Q_OBJECT
 public:
-    MainWindow(QWidget *parent = 0);
-    virtual ~MainWindow();
-    bool eventFilter(QObject * watched, QEvent * event);
-    QStringList getResidues(QPlainTextEdit * edit) const;
+	MainWindow(QWidget * parent = 0);
+	virtual ~MainWindow();
 
 public slots:
-    void on_actionOpen_triggered();
-    void on_actionInvert_triggered();
-    void on_sensitivitySpin_valueChanged(double sen);
-    void on_imageScaleSpin_valueChanged(double scale);
-    //	void on_rotationBaseCombo_currentIndexChanged(int index);
-    void on_actionToggleMask_triggered();
-    void on_actionApplyMask_triggered();
-    void on_actionSaveMask_triggered();
-    void on_actionSaveMaskImage_triggered();
-    void on_actionLoadMask_triggered();
-    void on_actionClearRefinement_triggered();
-    void on_actionClearGrid_triggered();
-    void on_actionCalculateAverage_triggered();
-    void on_actionShowAverage_toggled(bool shown);
-    void on_actionCanvasShowImage_toggled(bool shown);
-    void on_actionResetView_triggered();
-    void on_actionShowCounts_triggered();
-    void on_actionClearLastRefinement_triggered();
-    void on_actionSelectBackground_toggled(bool select);
-    void on_actionSubtractBackground_triggered();
-    void on_actionExportPspm_triggered();
-    void on_actionExportAverages_triggered();
-    void on_actionExportScanSitePssm_triggered();
-    void on_excludedResidueEdit_textChanged();
-    void on_phosphoEdit_textChanged();
-    void on_excludeResidueButton_clicked();
-    void on_phosphoButton_clicked();
-    void refineTriggered();
-    void updateDrawings();
-    void updatePlotScroll();
-    void updatePlot();
-    void updateMatrix();
-    void scaleImage(double scale);
-    void changeScale(double scale);
-    void resizePlot();
-    void about();
-
-signals:
-void scaleChanged(double factor);
+	void showStatus(const QString & message);
+	void updatePatchType();
+	void on_imageScaleSpin_valueChanged(double scale);
+	void on_rowColButton_clicked();
+	void on_actionLoadImage_triggered();
+	void on_actionLoadProject_triggered();
+	void on_actionSaveProject_triggered();
+	void on_actionExportScansitePssm_triggered();
+	void on_actionExportAverageIntensities_triggered();
+	void on_canvasSensitivitySlider_valueChanged(int sensitivityValue);
+	void on_canvasScaleSlider_valueChanged(int scaleValue);
+	void on_actionInvertImage_triggered();
+	void on_actionApplyMask_triggered();
+	void on_actionToggleMask_triggered();
+	void on_excludeResidueButton_clicked();
+	void on_excludedResidueEdit_textChanged();
+	void on_phosphoEdit_textChanged();
+	void on_actionResetView_triggered();
+	void updateTypeLabels();
+	void updateProcessorStartPoint();
+	void updateProcessorEndPoint();
+	void updatePlotScroll();
+	void updateInspector();
+	void updateProcessor();
+	void updatePlot();
+	void resizePlot();
+	void updateMatrix();
+	void updateProcessorMadRanges();
+	void displayMatrix(const RealMatrix & matrix);
+	void log(const QString & message);
+	void setScansiteMatrixValue(int row, int column);
 
 protected:
-    void closeEvent(QCloseEvent *event);
+	void closeEvent(QCloseEvent * event);
+	void initProject();
+	bool eventFilter(QObject * watched, QEvent * event);
+	// Transform to real coordinate
+	inline int trc(int x, double factor);
+	// Transform to screen coordinate
+	inline int tsc(int x, double factor);
 
 private:
-    enum RefineType {
-        REF_POINTER, REF_POLYGON, REF_ELLIPSE
-    };
+	Ui::MainWindow ui;
+	Processor processor;
+	int transientPeriod;
+	Patch::PatchType patchType;
+	QPolygon patchPolygon;
+	QString lastImagePath;
+	QString lastProjectPath;
+	QString lastExportPath;
+	bool imageMasked;
+	QList<PositionPlotWidget *> posPlotWidgets;
 
 private:
-    void showStatus(const QString &statusMessage);
-    void log(const QString &line);
-    QString getFormatName(QImage::Format format);
-    void loadImage(const QString fileName);
-    // Transform to real coordinate
-    int trc(int x, double factor) {
-        return x / factor;
-    }
-    // Transform to screen coordinate
-    int tsc(int x, double factor) {
-        return x * factor;
-    }
-
-private:
-    Ui::MainWindow ui;
-    QImage image;
-    double maxColor;
-    QImage invertedImage;
-    RefineType refineType;
-    QPolygon polygon;
-    bool isFirstBgPoint;
-    double imageScale;
-    QList<PositionPlotWidget *> posPlotWidgets;
-    static QStringList designRowHeader, designColHeader;
-    QStringList rowHeader, colHeader;
-    QStandardItemModel *averageModel;
-    QString lastBlotPath;
-    QString lastMaskPath;
-    bool maskOn;
+	static QString getFormatName(QImage::Format format);
+	QStringList getResidues(QPlainTextEdit * edit) const;
+	void loadSettings();
+	void saveSettings();
+	void makeConnections();
+	void debugMatrix(const RealMatrix * matrix);
+	void debug(const QString &message);
 };
 
 #endif /* MAINWINDOW_H_ */

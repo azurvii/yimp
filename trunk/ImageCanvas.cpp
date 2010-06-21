@@ -1,248 +1,218 @@
 /*
  * ImageCanvas.cpp
  *
- *  Created on: Feb 27, 2010
+ *  Created on: Jun 3, 2010
  *      Author: Vincent
  */
 
 #include "ImageCanvas.h"
+#include "Processor.h"
 #include <QtGui>
 
-ImageCanvas::ImageCanvas(QWidget *parent) :
-    QLabel(parent) {
-    angle = .0;
-    startX = 0;
-    startY = 0;
-    endX = 0;
-    endY = 0;
-    this->col = 0;
-    this->row = 0;
-    this->radius = 0;
-    showBg = false;
-    min = max = 0;
-    image = 0;
-    maxColor = 0;
-    scale = 1.0;
+ImageCanvas::ImageCanvas(QWidget * parent) :
+	QLabel(parent) {
+	scale = 1.0;
+	isGridShown = false;
+	isPatchesShown = false;
+	init();
 }
 
 ImageCanvas::~ImageCanvas() {
 }
 
+void ImageCanvas::setProcessor(Processor * processor) {
+	this->processor = processor;
+}
+
 QBitmap ImageCanvas::getMask() const {
-    QBitmap mask(image->size());
-    mask.clear();
-    QBrush brush;
-    QPen pen;
-    brush.setColor(QColor(Qt::color1));
-    brush.setStyle(Qt::SolidPattern);
-    pen.setStyle(Qt::NoPen);
-    QPainter painter(&mask);
-    painter.setPen(pen);
-    painter.setBrush(brush);
-
-    painter.save();
-    painter.translate(startX, startY);
-    painter.rotate(angle);
-    for (QVector<QRect>::const_iterator itr = circleGrid.begin(); itr
-            != circleGrid.end(); ++itr) {
-        painter.drawEllipse(*itr);
-    }
-    painter.restore();
-
-    painter.save();
-    brush.setColor(QColor(Qt::color0));
-    painter.setBrush(brush);
-    //	painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
-    for (QVector<QPolygon>::const_iterator itr = polygons.begin(); itr
-            != polygons.end(); ++itr) {
-        painter.drawPolygon(*itr);
-    }
-    painter.restore();
-    painter.end();
-    return mask;
-}
-
-void ImageCanvas::clearCircleGrid() {
-    circleGrid.clear();
-    update();
-}
-
-void ImageCanvas::clearPolygons() {
-    polygons.clear();
-    update();
-}
-
-void ImageCanvas::addCircleGrid(int leftTopX, int leftTopY, int rightBottomX,
-        int rightBottomY, double radius, int col, int row, double angle) {
-    startX = leftTopX;
-    startY = leftTopY;
-    endX = rightBottomX;
-    endY = rightBottomY;
-    this->angle = angle;
-    this->col = col;
-    this->row = row;
-    this->radius = radius;
-    drawCircleGrid();
-}
-
-void ImageCanvas::drawCircleGrid() {
-    double xInterval = ((double) endX - (double) startX) / (double) (col - 1);
-    double yInterval = ((double) endY - (double) startY) / (double) (row - 1);
-    for (int i = 0; i < row; ++i) {
-        for (int j = 0; j < col; ++j) {
-            circleGrid.push_back(QRect(j * xInterval - radius, i * yInterval
-                    - radius, 2 * radius, 2 * radius));
-        }
-    }
-    this->angle = angle;
-}
-
-void ImageCanvas::addPolygon(const QPolygon &polygon) {
-    polygons.push_back(polygon);
-}
-
-void ImageCanvas::rotate(double angle) {
-    this->angle = angle;
+	if (image == 0) {
+		return QBitmap();
+	}
+	QBitmap mask(image->size());
+	mask.clear();
+	QBrush brush;
+	QPen pen;
+	brush.setColor(QColor(Qt::color1));
+	brush.setStyle(Qt::SolidPattern);
+	pen.setStyle(Qt::NoPen);
+	QPainter painter(&mask);
+	painter.setPen(pen);
+	painter.setBrush(brush);
+	if (isGridShown && grid && grid->size() > 0) {
+		painter.save();
+		switch (grid->getType()) {
+		case Grid::GRID_NULL:
+			break;
+		case Grid::GRID_ELLIPSE:
+			for (int i = 0; i < grid->size(); ++i) {
+				painter.drawEllipse((*grid)[i]);
+			}
+			break;
+		case Grid::GRID_RECTANGLE:
+			for (int i = 0; i < grid->size(); ++i) {
+				painter.drawRect((*grid)[i]);
+			}
+			break;
+		}
+		painter.restore();
+	}
+	if (isPatchesShown && patches && patches->size() > 0) {
+		painter.save();
+		brush.setColor(QColor(Qt::color0));
+		painter.setBrush(brush);
+		for (int i = 0; i < patches->size(); ++i) {
+			switch ((*patches)[i].getType()) {
+			case Patch::PATCH_ELLIPSE:
+				painter.drawEllipse((*patches)[i].getEllipse());
+				break;
+			case Patch::PATCH_POLYGON:
+				painter.drawPolygon((*patches)[i].getPolygon());
+				break;
+			case Patch::PATCH_RECTANGLE:
+				painter.drawRect((*patches)[i].getRectangle());
+				break;
+			case Patch::PATCH_NULL:
+				break;
+			}
+		}
+		painter.restore();
+	}
+	painter.end();
+	return mask;
 }
 
 void ImageCanvas::paintEvent(QPaintEvent *event) {
-    QLabel::paintEvent(event);
-
-    if (circleGrid.size() == 0) {
-        return;
-    }
-
-    QPainter painter(this);
-    painter.scale(scale, scale);
-    painter.save();
-    painter.translate(startX, startY);
-    painter.rotate(angle);
-    for (QVector<QRect>::iterator itr = circleGrid.begin(); itr
-            != circleGrid.end(); ++itr) {
-        painter.drawEllipse(*itr);
-    }
-    painter.restore();
-
-    painter.save();
-    QBrush brush;
-    brush.setStyle(Qt::SolidPattern);
-    brush.setColor(QColor(Qt::color1));
-    //	painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
-    for (QVector<QPolygon>::const_iterator itr = polygons.begin(); itr
-            != polygons.end(); ++itr) {
-        painter.drawPolygon(*itr);
-    }
-    painter.restore();
-
-    if (showBg) {
-        painter.save();
-        painter.drawRect(bg);
-        painter.restore();
-    }
+	QLabel::paintEvent(event);
+	QPainter painter(this);
+	painter.scale(scale, scale);
+	// for drawing the grid
+	if (isGridShown && grid && grid->size() > 0) {
+		painter.save();
+		switch (grid->getType()) {
+		case Grid::GRID_NULL:
+			break;
+		case Grid::GRID_ELLIPSE:
+			for (int i = 0; i < grid->size(); ++i) {
+				painter.drawEllipse((*grid)[i]);
+			}
+			break;
+		case Grid::GRID_RECTANGLE:
+			for (int i = 0; i < grid->size(); ++i) {
+				painter.drawRect((*grid)[i]);
+			}
+			break;
+		}
+		painter.restore();
+	}
+	// for drawing the patches
+	if (isPatchesShown && patches && patches->size() > 0) {
+		painter.save();
+		QBrush brush;
+		brush.setStyle(Qt::SolidPattern);
+		brush.setColor(QColor(Qt::color1));
+		for (int i = 0; i < patches->size(); ++i) {
+			switch ((*patches)[i].getType()) {
+			case Patch::PATCH_ELLIPSE:
+				painter.drawEllipse((*patches)[i].getEllipse());
+				break;
+			case Patch::PATCH_POLYGON:
+				painter.drawPolygon((*patches)[i].getPolygon());
+				break;
+			case Patch::PATCH_RECTANGLE:
+				painter.drawRect((*patches)[i].getRectangle());
+				break;
+			case Patch::PATCH_NULL:
+				break;
+			}
+		}
+		painter.restore();
+	}
 }
 
-void ImageCanvas::scanBackground() {
-    if (!showBg) {
-        return;
-    }
-    int leftx = bg.x();
-    int lefty = bg.y();
-    int rightx = leftx + bg.width();
-    int righty = lefty + bg.height();
-    min = maxColor;
-    max = 0;
-    for (int i = leftx; i < rightx; ++i) {
-        for (int j = lefty; j < righty; ++j) {
-            int gray = qGray(image->pixel(i, j));
-            if (gray > max) {
-                max = gray;
-            }
-            if (gray < min) {
-                min = gray;
-            }
-        }
-    }
-    if (min < maxColor) {
-        emit backgroundMinChanged(min);
-    }
-    if (max > 0) {
-        emit backgroundMaxChanged(max);
-    }
+void ImageCanvas::showGrid(bool show) {
+	isGridShown = show;
+	update();
 }
 
-void ImageCanvas::drawBackground(bool shown) {
-    showBg = shown;
-    scanBackground();
+void ImageCanvas::hideGrid(bool hide) {
+	showGrid(!hide);
 }
 
-void ImageCanvas::loadGridStartPoint(const QPoint &startPoint) {
-    startX = startPoint.x();
-    startY = startPoint.y();
+void ImageCanvas::showPatches(bool show) {
+	isPatchesShown = show;
+	update();
 }
 
-void ImageCanvas::loadGridAngle(double angle) {
-    this->angle = angle;
+void ImageCanvas::hidePatches(bool hide) {
+	showPatches(!hide);
 }
 
-void ImageCanvas::clearLastPolygon() {
-    if (polygons.size() > 0) {
-        polygons.pop_back();
-    }
+void ImageCanvas::init() {
+	grid = 0;
+	patches = 0;
+	image = 0;
+	imageInverted = false;
 }
 
-void ImageCanvas::clearBackground() {
-    bg = QRect();
-    showBg = false;
+void ImageCanvas::setScale(double imageScale) {
+	if (scale != imageScale) {
+		scale = imageScale;
+		emit imageScaleChanged(scale);
+	}
+	updateImage();
 }
 
-void ImageCanvas::setImage(QImage *image) {
-    this->image = image;
-    if (image) {
-        int grayDepth = image->depth();
-        if (!image->isGrayscale()) {
-            grayDepth = grayDepth / 4;
-        }
-        maxColor = (int) pow(2.0, (double) grayDepth) - 1;
-        this->setPixmap(QPixmap::fromImage(*image).scaled(image->width()
-                * scale, image->height() * scale));
-    } else {
-        maxColor = 0;
-    }
+void ImageCanvas::setGrid(const Grid * grid) {
+	if (this->grid != grid) {
+		this->grid = grid;
+	}
+	updateGrid();
 }
 
-void ImageCanvas::setScale(double scale) {
-    this->scale = scale;
+void ImageCanvas::updateGrid() {
+	update();
 }
 
-void ImageCanvas::drawBackground(int leftTopX, int leftTopY, int rightBottomX,
-        int rightBottomY) {
-    bg.setX(leftTopX);
-    bg.setY(leftTopY);
-    bg.setWidth(rightBottomX - leftTopX);
-    bg.setHeight(rightBottomY - leftTopY);
-    scanBackground();
+void ImageCanvas::setPatches(const PatchList * patches) {
+	if (this->patches != patches) {
+		this->patches = patches;
+	}
+	updatePatches();
 }
 
-void ImageCanvas::loadCircleGrid(const QVector<QRect> &circleGrid) {
-    this->circleGrid = circleGrid;
+void ImageCanvas::updatePatches() {
+	update();
 }
 
-void ImageCanvas::loadPolygons(const QVector<QPolygon> &polygons) {
-    this->polygons = polygons;
+double ImageCanvas::getScale() const {
+	return scale;
 }
 
-QVector<QRect> ImageCanvas::getGrid() const {
-    return circleGrid;
+void ImageCanvas::setImage(const QImage * image) {
+	if (this->image != image) {
+		this->image = image;
+	}
+	updateImage();
 }
 
-QPoint ImageCanvas::getGridStartPoint() const {
-    return QPoint(startX, startY);
+void ImageCanvas::updateImage() {
+	scaleImage();
+	update();
 }
 
-QVector<QPolygon> ImageCanvas::getPolygons() const {
-    return polygons;
+void ImageCanvas::scaleImage() {
+	if (image) {
+		QImage dispImage = *image;
+		if (imageInverted) {
+			dispImage.invertPixels();
+		}
+		this->setPixmap(QPixmap::fromImage(dispImage).scaled(dispImage.width()
+				* scale, dispImage.height() * scale));
+	}
 }
 
-double ImageCanvas::getGridAngle() const {
-    return angle;
+void ImageCanvas::setImageInverted(bool inverted) {
+	imageInverted = inverted;
+	scaleImage();
+	update();
 }
