@@ -7,7 +7,7 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{A157440D-43BE-4800-B08D-DD9C07526869}
 AppName=YIMP
-AppVerName=YIMP 0.2
+AppVerName=YIMP 1.0
 AppPublisher=Vincent
 AppPublisherURL=http://yimp.googlecode.com
 AppSupportURL=http://yimp.googlecode.com
@@ -17,7 +17,7 @@ DefaultGroupName=YIMP
 AllowNoIcons=yes
 LicenseFile=C:\yimp\LICENSE.txt
 OutputDir=C:\yimp
-OutputBaseFilename=setup
+OutputBaseFilename=yimp-setup
 Compression=lzma
 SolidCompression=yes
 
@@ -29,11 +29,11 @@ Name: desktopicon; Description: {cm:CreateDesktopIcon}; GroupDescription: {cm:Ad
 
 [Files]
 Source: C:\yimp\build\yimp.exe; DestDir: {app}; Flags: ignoreversion
-Source: C:\qt-4.6.2\qt\bin\mingwm10.dll; DestDir: {app}; Flags: ignoreversion
-Source: C:\qt-4.6.2\qt\bin\QtCore4.dll; DestDir: {app}; Flags: ignoreversion
-Source: C:\qt-4.6.2\qt\bin\QtGui4.dll; DestDir: {app}; Flags: ignoreversion
-Source: C:\qt-4.6.2\qt\bin\QtOpenGL4.dll; DestDir: {app}; Flags: ignoreversion
-Source: C:\qt-4.6.2\qt\bin\libgcc_s_dw2-1.dll; DestDir: {app}; Flags: ignoreversion
+Source: C:\yimp\build\mingwm10.dll; DestDir: {app}; Flags: ignoreversion
+Source: C:\yimp\build\QtCore4.dll; DestDir: {app}; Flags: ignoreversion
+Source: C:\yimp\build\QtGui4.dll; DestDir: {app}; Flags: ignoreversion
+Source: C:\yimp\build\QtOpenGL4.dll; DestDir: {app}; Flags: ignoreversion
+Source: C:\yimp\build\libgcc_s_dw2-1.dll; DestDir: {app}; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
@@ -43,6 +43,5 @@ Name: {commondesktop}\YIMP; Filename: {app}\yimp.exe; Tasks: desktopicon
 
 [Run]
 Filename: {app}\yimp.exe; Description: {cm:LaunchProgram,yimp}; Flags: nowait postinstall skipifsilent
-
 
 

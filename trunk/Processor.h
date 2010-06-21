@@ -125,6 +125,7 @@ private:
 	void appendPhosphoColumns(const QList<int> & columns);
 	int getOriginalColumn(int omittedHeaderColumn);
 	void debug(const QString &message);
+	bool isImageValid();
 
 private:
 	static const qint32 projectFileHeader;
@@ -132,7 +133,6 @@ private:
 	static const QString defaultRowHeaderName;
 	static const QString defaultColHeaderName;
 	QImage image;
-	QString imagePath;
 	QList<RealMatrix> matrices;
 	QList<bool> ready;
 	qint64 grayMax, grayMin;

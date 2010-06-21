@@ -645,28 +645,30 @@ void MainWindow::makeConnections() {
 			calculateAverages()));
 	connect(ui.actionCalculateAverages, SIGNAL(triggered()), this, SLOT(
 			updatePlot()));
-	connect(&processor, SIGNAL(message(const QString &)), this, SLOT(showStatus(const QString &)));
-	connect(&processor, SIGNAL(matrixChanged(int, RealMatrix *)), this, SLOT(updateInspector()));
-	connect(&processor, SIGNAL(imageChanged(const QImage *)), ui.imageCanvas, SLOT(setImage(const QImage *)));
-	connect(&processor, SIGNAL(patchListChanged(const PatchList *)), ui.imageCanvas, SLOT(setPatches(const PatchList *)));
-	connect(&processor, SIGNAL(gridChanged(const Grid *)), ui.imageCanvas, SLOT(setGrid(const Grid *)));
-	connect(&processor, SIGNAL(gridRowCountChanged(int)), ui.gridRowSpin, SLOT(setValue(int)));
-	connect(&processor, SIGNAL(gridColumnCountChanged(int)), ui.gridColumnSpin, SLOT(setValue(int)));
-	connect(&processor, SIGNAL(gridRowCountChanged(int)), this, SLOT(updatePlot()));
-	connect(&processor, SIGNAL(gridColumnCountChanged(int)), this, SLOT(updatePlot()));
-	connect(&processor, SIGNAL(gridAngleChanged(double)), ui.gridAngleSpin, SLOT(setValue(double)));
-	connect(&processor, SIGNAL(gridElementWidthChanged(double)), ui.gridWidthSpin, SLOT(setValue(double)));
-	connect(&processor, SIGNAL(gridElementHeightChanged(double)), ui.gridHeightSpin, SLOT(setValue(double)));
-	connect(&processor, SIGNAL(gridStartXChanged(double)), ui.gridStartXSpin, SLOT(setValue(double)));
-	connect(&processor, SIGNAL(gridStartYChanged(double)), ui.gridStartYSpin, SLOT(setValue(double)));
-	connect(&processor, SIGNAL(gridEndXChanged(double)), ui.gridEndXSpin, SLOT(setValue(double)));
-	connect(&processor, SIGNAL(gridEndYChanged(double)), ui.gridEndYSpin, SLOT(setValue(double)));
-	connect(&processor, SIGNAL(gridOverlapped(bool)), ui.overlapLabel, SLOT(setVisible(bool)));
+connect(&processor, SIGNAL(message(const QString &)), this, SLOT(showStatus(const QString &)));
+connect(&processor, SIGNAL(matrixChanged(int, RealMatrix *)), this, SLOT(updateInspector()));
+connect(&processor, SIGNAL(imageChanged(const QImage *)), ui.imageCanvas, SLOT(setImage(const QImage *)));
+connect(&processor, SIGNAL(patchListChanged(const PatchList *)), ui.imageCanvas, SLOT(setPatches(const PatchList *)));
+connect(&processor, SIGNAL(gridChanged(const Grid *)), ui.imageCanvas, SLOT(setGrid(const Grid *)));
+connect(&processor, SIGNAL(gridRowCountChanged(int)), ui.gridRowSpin, SLOT(setValue(int)));
+connect(&processor, SIGNAL(gridColumnCountChanged(int)), ui.gridColumnSpin, SLOT(setValue(int)));
+connect(&processor, SIGNAL(gridRowCountChanged(int)), this, SLOT(updatePlot()));
+connect(&processor, SIGNAL(gridColumnCountChanged(int)), this, SLOT(updatePlot()));
+connect(&processor, SIGNAL(gridAngleChanged(double)), ui.gridAngleSpin, SLOT(setValue(double)));
+connect(&processor, SIGNAL(gridElementWidthChanged(double)), ui.gridWidthSpin, SLOT(setValue(double)));
+connect(&processor, SIGNAL(gridElementHeightChanged(double)), ui.gridHeightSpin, SLOT(setValue(double)));
+connect(&processor, SIGNAL(gridStartXChanged(double)), ui.gridStartXSpin, SLOT(setValue(double)));
+connect(&processor, SIGNAL(gridStartYChanged(double)), ui.gridStartYSpin, SLOT(setValue(double)));
+connect(&processor, SIGNAL(gridEndXChanged(double)), ui.gridEndXSpin, SLOT(setValue(double)));
+connect(&processor, SIGNAL(gridEndYChanged(double)), ui.gridEndYSpin, SLOT(setValue(double)));
+connect(&processor, SIGNAL(gridOverlapped(bool)), ui.overlapLabel, SLOT(setVisible(bool)));
 }
 
 void MainWindow::setScansiteMatrixValue(int row, int column) {
 	if (ui.scansiteMatrixCheck->isChecked()) {
-		double val = ui.matrixTable->item(row, column)->data(Qt::DisplayRole).toDouble();
+		double
+				val =
+						ui.matrixTable->item(row, column)->data(Qt::DisplayRole).toDouble();
 		processor.setMatrixValue(Processor::MATRIX_SCANSITE, row, column, val);
 	}
 }
