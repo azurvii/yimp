@@ -129,9 +129,12 @@ bool Processor::loadProject(const QString & projectFilePath) {
 			ds >> doubleVal;
 			madRanges << doubleVal;
 		}
-		QString path;
-		ds >> path;
-		loadImage(path);
+		ds >> image;
+		if (!isImageValid()) {
+			return false;
+		}
+		scanImage();
+		emit imageChanged(&image);
 		return true;
 	} else {
 		emit message(tr("!! This YIMP project version is not supported."));
@@ -187,34 +190,15 @@ void Processor::saveProject(const QString & projectFilePath) {
 	for (int i = 0; i < psize; ++i) {
 		ds << madRanges[i];
 	}
-	ds << imagePath;
+	ds << image;
 }
 
 void Processor::loadImage(const QString & imageFilePath, bool inverted) {
 	image = QImage();
 	if (image.load(imageFilePath)) {
-		switch (image.format()) {
-		case QImage::Format_Mono:
-			borderLower = 0;
-			borderUpper = 1;
-			break;
-		case QImage::Format_RGB16:
-			borderLower = 0;
-			borderUpper = 63;
-			break;
-		case QImage::Format_Indexed8:
-		case QImage::Format_RGB32:
-		case QImage::Format_ARGB32:
-			// they are all equal to 8-bit gray image
-			borderLower = 0;
-			borderUpper = 255;
-			break;
-		default:
-			emit message(tr("!! Unsupported image format: \"%1\"").arg(
-					imageFilePath));
+		if (!isImageValid()) {
 			return;
 		}
-		imagePath = imageFilePath;
 		if (inverted) {
 			image.invertPixels();
 		}
@@ -867,4 +851,30 @@ void Processor::saveAverageIntensities(const QString & filePath) {
 		ds << line << "\n";
 	}
 	emit message(tr("** Exported average intensities to \"%1\"").arg(filePath));
+}
+
+bool Processor::isImageValid() {
+	switch (image.format()) {
+	case QImage::Format_Mono:
+		borderLower = 0;
+		borderUpper = 1;
+		break;
+	case QImage::Format_RGB16:
+		borderLower = 0;
+		borderUpper = 63;
+		break;
+	case QImage::Format_Indexed8:
+	case QImage::Format_RGB32:
+	case QImage::Format_ARGB32:
+		// they are all equal to 8-bit gray image
+		borderLower = 0;
+		borderUpper = 255;
+		break;
+	default:
+		borderLower = -1;
+		borderUpper = -1;
+		emit message(tr("!! Unsupported image format"));
+		return false;
+	}
+	return true;
 }
