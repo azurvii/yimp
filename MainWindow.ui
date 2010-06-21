@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
+ <author>Vincent</author>
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
   <property name="geometry">
@@ -11,45 +12,48 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Yaffe Lab Image Processor</string>
+   <string>YIMP</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_14">
+   <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="imageTab">
        <attribute name="title">
         <string>Image</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_11">
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
         <item>
-         <widget class="QSplitter" name="imageSplitter">
+         <widget class="QSplitter" name="imageTabSplitter">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <widget class="QScrollArea" name="scrollArea">
+          <widget class="QScrollArea" name="scrollArea_2">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
              <horstretch>1</horstretch>
-             <verstretch>1</verstretch>
+             <verstretch>0</verstretch>
             </sizepolicy>
            </property>
            <property name="widgetResizable">
             <bool>true</bool>
            </property>
-           <widget class="QWidget" name="scrollAreaWidgetContents">
+           <property name="alignment">
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+           </property>
+           <widget class="QWidget" name="scrollAreaWidgetContents_2">
             <property name="geometry">
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>509</width>
-              <height>422</height>
+              <width>406</width>
+              <height>441</height>
              </rect>
             </property>
-            <layout class="QHBoxLayout" name="horizontalLayout_4">
+            <layout class="QHBoxLayout" name="horizontalLayout_2">
              <item>
               <widget class="ImageCanvas" name="imageCanvas">
                <property name="alignment">
@@ -60,19 +64,25 @@
             </layout>
            </widget>
           </widget>
-          <widget class="QWidget" name="">
-           <layout class="QVBoxLayout" name="verticalLayout_10">
+          <widget class="QGroupBox" name="imageOptionGroup">
+           <layout class="QVBoxLayout" name="verticalLayout_2">
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout">
+              <property name="spacing">
+               <number>3</number>
+              </property>
               <item>
-               <widget class="QLabel" name="label_17">
+               <widget class="QLabel" name="label">
                 <property name="text">
-                 <string>Image Scale</string>
+                 <string>Image scale</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QDoubleSpinBox" name="scaleSpin">
+               <widget class="QDoubleSpinBox" name="imageScaleSpin">
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
                 <property name="suffix">
                  <string>x</string>
                 </property>
@@ -80,7 +90,7 @@
                  <double>0.010000000000000</double>
                 </property>
                 <property name="maximum">
-                 <double>10.000000000000000</double>
+                 <double>100.000000000000000</double>
                 </property>
                 <property name="singleStep">
                  <double>0.100000000000000</double>
@@ -93,381 +103,232 @@
              </layout>
             </item>
             <item>
-             <widget class="QToolBox" name="imageToolBox">
-              <widget class="QWidget" name="imageToolBoxPage1">
-               <property name="geometry">
-                <rect>
-                 <x>0</x>
-                 <y>-107</y>
-                 <width>208</width>
-                 <height>377</height>
-                </rect>
+             <widget class="QGroupBox" name="gridGroup">
+              <property name="title">
+               <string>Grid</string>
+              </property>
+              <property name="checkable">
+               <bool>true</bool>
+              </property>
+              <layout class="QGridLayout" name="gridLayout">
+               <property name="spacing">
+                <number>3</number>
                </property>
-               <attribute name="label">
-                <string>Grid</string>
-               </attribute>
-               <layout class="QVBoxLayout" name="verticalLayout_7">
-                <item>
-                 <widget class="QGroupBox" name="gridGroup">
-                  <property name="title">
-                   <string>Draw circle grid</string>
-                  </property>
-                  <property name="checkable">
-                   <bool>true</bool>
-                  </property>
-                  <property name="checked">
-                   <bool>false</bool>
-                  </property>
-                  <layout class="QVBoxLayout" name="verticalLayout_6">
-                   <item>
-                    <layout class="QGridLayout" name="gridLayout">
-                     <item row="0" column="0">
-                      <widget class="QLabel" name="label_4">
-                       <property name="text">
-                        <string>Columns</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="0" column="1">
-                      <widget class="QSpinBox" name="gridColumnSpin">
-                       <property name="readOnly">
-                        <bool>true</bool>
-                       </property>
-                       <property name="minimum">
-                        <number>1</number>
-                       </property>
-                       <property name="maximum">
-                        <number>999</number>
-                       </property>
-                       <property name="value">
-                        <number>22</number>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="1" column="0">
-                      <widget class="QLabel" name="label_5">
-                       <property name="text">
-                        <string>Rows</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="1" column="1">
-                      <widget class="QSpinBox" name="gridRowSpin">
-                       <property name="readOnly">
-                        <bool>true</bool>
-                       </property>
-                       <property name="minimum">
-                        <number>1</number>
-                       </property>
-                       <property name="maximum">
-                        <number>999</number>
-                       </property>
-                       <property name="value">
-                        <number>9</number>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="2" column="0">
-                      <widget class="QLabel" name="label_6">
-                       <property name="text">
-                        <string>Radius</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="2" column="1">
-                      <widget class="QDoubleSpinBox" name="gridRadiusSpin">
-                       <property name="decimals">
-                        <number>2</number>
-                       </property>
-                       <property name="minimum">
-                        <double>0.010000000000000</double>
-                       </property>
-                       <property name="maximum">
-                        <double>1000.000000000000000</double>
-                       </property>
-                       <property name="value">
-                        <double>1.000000000000000</double>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="4" column="1">
-                      <widget class="QDoubleSpinBox" name="gridStartYSpin"/>
-                     </item>
-                     <item row="3" column="1">
-                      <widget class="QDoubleSpinBox" name="gridStartXSpin"/>
-                     </item>
-                     <item row="3" column="0">
-                      <widget class="QLabel" name="label_7">
-                       <property name="text">
-                        <string>Start X</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="4" column="0">
-                      <widget class="QLabel" name="label_8">
-                       <property name="text">
-                        <string>Start Y</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="6" column="0">
-                      <widget class="QLabel" name="label_11">
-                       <property name="text">
-                        <string>End Y</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="5" column="0">
-                      <widget class="QLabel" name="label_10">
-                       <property name="text">
-                        <string>End X</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="5" column="1">
-                      <widget class="QDoubleSpinBox" name="gridEndXSpin"/>
-                     </item>
-                     <item row="6" column="1">
-                      <widget class="QDoubleSpinBox" name="gridEndYSpin"/>
-                     </item>
-                     <item row="7" column="0">
-                      <widget class="QLabel" name="label_9">
-                       <property name="text">
-                        <string>CW Angle</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="7" column="1">
-                      <widget class="QDoubleSpinBox" name="gridAngleSpin">
-                       <property name="decimals">
-                        <number>2</number>
-                       </property>
-                       <property name="minimum">
-                        <double>-364.990000000000009</double>
-                       </property>
-                       <property name="maximum">
-                        <double>364.990000000000009</double>
-                       </property>
-                       <property name="singleStep">
-                        <double>0.010000000000000</double>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="warningLabel">
+               <item row="0" column="0">
+                <widget class="QLabel" name="label_2">
+                 <property name="text">
+                  <string>Type</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1" colspan="2">
+                <widget class="QComboBox" name="gridTypeCombo">
+                 <item>
                   <property name="text">
-                   <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+                   <string>Ellipse/Circle</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Rectangle/Square</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+               <item row="6" column="0">
+                <widget class="QLabel" name="gridWidthLabel">
+                 <property name="text">
+                  <string>Width</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="6" column="1" colspan="2">
+                <widget class="QDoubleSpinBox" name="gridWidthSpin">
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="7" column="0">
+                <widget class="QLabel" name="gridHeightLabel">
+                 <property name="text">
+                  <string>Height</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="7" column="1" colspan="2">
+                <widget class="QDoubleSpinBox" name="gridHeightSpin">
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="8" column="0">
+                <widget class="QLabel" name="label_4">
+                 <property name="text">
+                  <string>Top-left</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="8" column="1">
+                <widget class="QDoubleSpinBox" name="gridStartXSpin">
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="8" column="2">
+                <widget class="QDoubleSpinBox" name="gridStartYSpin">
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="9" column="0">
+                <widget class="QLabel" name="label_5">
+                 <property name="text">
+                  <string>Bottom-right</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="9" column="1">
+                <widget class="QDoubleSpinBox" name="gridEndXSpin">
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="9" column="2">
+                <widget class="QDoubleSpinBox" name="gridEndYSpin">
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0" colspan="3">
+                <widget class="QCheckBox" name="gridOrthoCheck">
+                 <property name="text">
+                  <string>Circle</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QSpinBox" name="gridRowSpin">
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                 <property name="minimum">
+                  <number>1</number>
+                 </property>
+                 <property name="maximum">
+                  <number>100</number>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="2">
+                <widget class="QSpinBox" name="gridColumnSpin">
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                 <property name="minimum">
+                  <number>1</number>
+                 </property>
+                 <property name="maximum">
+                  <number>100</number>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QPushButton" name="rowColButton">
+                 <property name="text">
+                  <string>Row &amp;&amp; col</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="10" column="0">
+                <widget class="QLabel" name="label_3">
+                 <property name="text">
+                  <string>Rotation</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="10" column="1" colspan="2">
+                <widget class="QDoubleSpinBox" name="gridAngleSpin">
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                 <property name="minimum">
+                  <double>-180.000000000000000</double>
+                 </property>
+                 <property name="maximum">
+                  <double>179.990000000000009</double>
+                 </property>
+                 <property name="singleStep">
+                  <double>0.100000000000000</double>
+                 </property>
+                </widget>
+               </item>
+               <item row="11" column="0" colspan="3">
+                <widget class="QLabel" name="overlapLabel">
+                 <property name="text">
+                  <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Lucida Grande'; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; color:#ff0000;&quot;&gt;Overlapping grid&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="verticalSpacer_2">
-                  <property name="orientation">
-                   <enum>Qt::Vertical</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>20</width>
-                    <height>40</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </widget>
-              <widget class="QWidget" name="imageToolBoxPage2">
-               <property name="geometry">
-                <rect>
-                 <x>0</x>
-                 <y>0</y>
-                 <width>208</width>
-                 <height>285</height>
-                </rect>
-               </property>
-               <attribute name="label">
-                <string>Refine</string>
-               </attribute>
-               <layout class="QVBoxLayout" name="verticalLayout_8">
-                <item>
-                 <widget class="QGroupBox" name="groupBox">
-                  <property name="title">
-                   <string>Mask</string>
-                  </property>
-                  <layout class="QVBoxLayout" name="verticalLayout_4">
-                   <item>
-                    <widget class="QRadioButton" name="refinePointerRadio">
-                     <property name="text">
-                      <string>No mask</string>
-                     </property>
-                     <property name="checked">
-                      <bool>true</bool>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QRadioButton" name="refinePolygonRadio">
-                     <property name="text">
-                      <string>Polygon mask</string>
-                     </property>
-                    </widget>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="verticalSpacer_3">
-                  <property name="orientation">
-                   <enum>Qt::Vertical</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>20</width>
-                    <height>316</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </widget>
-              <widget class="QWidget" name="backgroundSubstractionPage">
-               <property name="enabled">
-                <bool>false</bool>
-               </property>
-               <property name="geometry">
-                <rect>
-                 <x>0</x>
-                 <y>0</y>
-                 <width>193</width>
-                 <height>324</height>
-                </rect>
-               </property>
-               <attribute name="label">
-                <string>Background Subtraction</string>
-               </attribute>
-               <layout class="QVBoxLayout" name="verticalLayout_9">
-                <item>
-                 <widget class="QGroupBox" name="groupBox_2">
-                  <property name="title">
-                   <string>Selected Area</string>
-                  </property>
-                  <layout class="QGridLayout" name="gridLayout_2">
-                   <item row="0" column="0">
-                    <widget class="QLabel" name="label">
-                     <property name="text">
-                      <string>Max</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="1" column="0">
-                    <widget class="QLabel" name="label_12">
-                     <property name="text">
-                      <string>Min</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="0" column="1">
-                    <widget class="QSpinBox" name="bgMaxSpin">
-                     <property name="readOnly">
-                      <bool>true</bool>
-                     </property>
-                     <property name="maximum">
-                      <number>255</number>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="1" column="1">
-                    <widget class="QSpinBox" name="bgMinSpin">
-                     <property name="readOnly">
-                      <bool>true</bool>
-                     </property>
-                     <property name="maximum">
-                      <number>255</number>
-                     </property>
-                    </widget>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QGroupBox" name="bgGroup">
-                  <property name="title">
-                   <string>Draw background</string>
-                  </property>
-                  <property name="checkable">
-                   <bool>true</bool>
-                  </property>
-                  <layout class="QGridLayout" name="gridLayout_3">
-                   <item row="0" column="0">
-                    <widget class="QLabel" name="label_13">
-                     <property name="text">
-                      <string>StartX</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="2" column="0">
-                    <widget class="QLabel" name="label_14">
-                     <property name="text">
-                      <string>EndX</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="1" column="0">
-                    <widget class="QLabel" name="label_15">
-                     <property name="text">
-                      <string>StartY</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="3" column="0">
-                    <widget class="QLabel" name="label_16">
-                     <property name="text">
-                      <string>EndY</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="0" column="1">
-                    <widget class="QSpinBox" name="bgStartXSpin"/>
-                   </item>
-                   <item row="1" column="1">
-                    <widget class="QSpinBox" name="bgStartYSpin"/>
-                   </item>
-                   <item row="2" column="1">
-                    <widget class="QSpinBox" name="bgEndXSpin"/>
-                   </item>
-                   <item row="3" column="1">
-                    <widget class="QSpinBox" name="bgEndYSpin"/>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="verticalSpacer_4">
-                  <property name="orientation">
-                   <enum>Qt::Vertical</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>20</width>
-                    <height>193</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </widget>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="patchGroup">
+              <property name="title">
+               <string>Patch</string>
+              </property>
+              <property name="checkable">
+               <bool>true</bool>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_3">
+               <property name="spacing">
+                <number>3</number>
+               </property>
+               <item>
+                <widget class="QRadioButton" name="patchNullRadio">
+                 <property name="text">
+                  <string>None</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="patchPolygonRadio">
+                 <property name="text">
+                  <string>Polygon</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>77</height>
+               </size>
+              </property>
+             </spacer>
             </item>
            </layout>
           </widget>
@@ -475,115 +336,102 @@ p, li { white-space: pre-wrap; }
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="canvasTab">
+      <widget class="QWidget" name="inspectorTab">
        <attribute name="title">
         <string>Inspector</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_5">
+       <layout class="QHBoxLayout" name="horizontalLayout_4">
         <item>
-         <widget class="QSplitter" name="canvasSplitter">
+         <widget class="QSplitter" name="inspectorTabSplitter">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <widget class="MyCanvas" name="myCanvas" native="true">
+          <widget class="InspectorCanvas" name="inspectorCanvas" native="true">
            <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
              <horstretch>1</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
-           <property name="minimumSize">
-            <size>
-             <width>50</width>
-             <height>50</height>
-            </size>
-           </property>
           </widget>
-          <widget class="QToolBox" name="toolBox">
-           <property name="currentIndex">
-            <number>0</number>
-           </property>
-           <widget class="QWidget" name="viewPage">
-            <property name="geometry">
-             <rect>
-              <x>0</x>
-              <y>0</y>
-              <width>100</width>
-              <height>392</height>
-             </rect>
-            </property>
-            <attribute name="label">
-             <string>Option</string>
-            </attribute>
-            <layout class="QVBoxLayout" name="verticalLayout_3">
-             <item>
-              <widget class="QLabel" name="label_2">
-               <property name="text">
-                <string>Sensitivity</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QDoubleSpinBox" name="sensitivitySpin">
-               <property name="minimum">
-                <double>0.010000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>2.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>0.100000000000000</double>
-               </property>
-               <property name="value">
-                <double>0.200000000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="Line" name="line_3">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="label_3">
-               <property name="text">
-                <string>Image Scale</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QDoubleSpinBox" name="imageScaleSpin">
-               <property name="minimum">
-                <double>0.010000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>5.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>0.020000000000000</double>
-               </property>
-               <property name="value">
-                <double>0.100000000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <spacer name="verticalSpacer">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>20</width>
-                 <height>32</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-            </layout>
-           </widget>
+          <widget class="QGroupBox" name="groupBox_2">
+           <layout class="QVBoxLayout" name="verticalLayout_4">
+            <item>
+             <layout class="QGridLayout" name="gridLayout_2">
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_6">
+                <property name="text">
+                 <string>Unit scale</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QSlider" name="canvasScaleSlider">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>200</number>
+                </property>
+                <property name="value">
+                 <number>10</number>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_7">
+                <property name="text">
+                 <string>Sensitivity</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QSlider" name="canvasSensitivitySlider">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>200</number>
+                </property>
+                <property name="value">
+                 <number>20</number>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_2">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>376</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
           </widget>
          </widget>
         </item>
@@ -593,7 +441,7 @@ p, li { white-space: pre-wrap; }
        <attribute name="title">
         <string>Plot</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout">
+       <layout class="QHBoxLayout" name="horizontalLayout_6">
         <item>
          <widget class="QSplitter" name="plotSplitter">
           <property name="orientation">
@@ -609,121 +457,118 @@ p, li { white-space: pre-wrap; }
            <property name="widgetResizable">
             <bool>true</bool>
            </property>
-           <widget class="QWidget" name="scrollAreaWidgetContents_2">
+           <widget class="QWidget" name="scrollAreaWidgetContents_3">
             <property name="geometry">
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>439</width>
-              <height>422</height>
+              <width>433</width>
+              <height>441</height>
              </rect>
             </property>
            </widget>
           </widget>
-          <widget class="QToolBox" name="toolBox_3">
-           <property name="currentIndex">
-            <number>0</number>
-           </property>
-           <widget class="QWidget" name="page_11">
-            <property name="geometry">
-             <rect>
-              <x>0</x>
-              <y>0</y>
-              <width>280</width>
-              <height>392</height>
-             </rect>
-            </property>
-            <attribute name="label">
-             <string>Option</string>
-            </attribute>
-            <layout class="QVBoxLayout" name="verticalLayout_15">
-             <item>
-              <layout class="QGridLayout" name="gridLayout_4">
-               <item row="0" column="0">
-                <widget class="QLabel" name="label_18">
-                 <property name="text">
-                  <string>Plot width</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="0">
-                <widget class="QLabel" name="label_19">
-                 <property name="text">
-                  <string>Plot height</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="0">
-                <widget class="QLabel" name="label_20">
-                 <property name="text">
-                  <string>Axis ticks</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="1">
-                <widget class="QSpinBox" name="plotTickSpin">
-                 <property name="value">
-                  <number>4</number>
-                 </property>
-                </widget>
-               </item>
-               <item row="0" column="1">
-                <widget class="QSpinBox" name="plotWidthSpin">
-                 <property name="maximum">
-                  <number>999999</number>
-                 </property>
-                 <property name="value">
-                  <number>900</number>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="1">
-                <widget class="QSpinBox" name="plotHeightSpin">
-                 <property name="maximum">
-                  <number>999999</number>
-                 </property>
-                 <property name="value">
-                  <number>230</number>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item>
-              <widget class="QLabel" name="label_21">
-               <property name="text">
-                <string>Excluding residues:</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="excludedResidueLabel"/>
-             </item>
-             <item>
-              <widget class="QPlainTextEdit" name="excludedResidueEdit"/>
-             </item>
-             <item>
-              <widget class="QPushButton" name="excludeResidueButton">
-               <property name="text">
-                <string>Exclude</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <spacer name="verticalSpacer_7">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>20</width>
-                 <height>35</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-            </layout>
-           </widget>
+          <widget class="QGroupBox" name="groupBox_3">
+           <layout class="QVBoxLayout" name="verticalLayout_15">
+            <item>
+             <layout class="QGridLayout" name="gridLayout_4">
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_18">
+                <property name="text">
+                 <string>Plot width</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_19">
+                <property name="text">
+                 <string>Plot height</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_20">
+                <property name="text">
+                 <string>Axis ticks</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QSpinBox" name="plotTickSpin">
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+                <property name="value">
+                 <number>4</number>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QSpinBox" name="plotWidthSpin">
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+                <property name="maximum">
+                 <number>999999</number>
+                </property>
+                <property name="value">
+                 <number>900</number>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QSpinBox" name="plotHeightSpin">
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+                <property name="maximum">
+                 <number>999999</number>
+                </property>
+                <property name="value">
+                 <number>230</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QLabel" name="label_21">
+              <property name="text">
+               <string>Excluding residues:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="excludedResidueLabel"/>
+            </item>
+            <item>
+             <widget class="QPlainTextEdit" name="excludedResidueEdit">
+              <property name="toolTip">
+               <string>Use white spaces to separate residues</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="excludeResidueButton">
+              <property name="text">
+               <string>Exclude</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_7">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>35</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
           </widget>
          </widget>
         </item>
@@ -733,75 +578,59 @@ p, li { white-space: pre-wrap; }
        <attribute name="title">
         <string>Matrix</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_12">
+       <layout class="QHBoxLayout" name="horizontalLayout_7">
         <item>
          <widget class="QSplitter" name="matrixSplitter">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <widget class="QTableView" name="matrixTable"/>
-          <widget class="QToolBox" name="toolBox_2">
-           <property name="currentIndex">
-            <number>0</number>
-           </property>
-           <widget class="QWidget" name="page_2">
-            <property name="geometry">
-             <rect>
-              <x>0</x>
-              <y>0</y>
-              <width>378</width>
-              <height>392</height>
-             </rect>
-            </property>
-            <attribute name="label">
-             <string>Option</string>
-            </attribute>
-            <layout class="QVBoxLayout" name="verticalLayout_13">
-             <item>
-              <widget class="QCheckBox" name="isScansite2MatrixCheck">
-               <property name="text">
-                <string>ScanSite 2.0 matrix</string>
-               </property>
-               <property name="checked">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="label_22">
-               <property name="text">
-                <string>Phospho site(s)</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="phosphoLabel"/>
-             </item>
-             <item>
-              <widget class="QPlainTextEdit" name="phosphoEdit"/>
-             </item>
-             <item>
-              <widget class="QPushButton" name="phosphoButton">
-               <property name="text">
-                <string>Assign site(s)</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <spacer name="verticalSpacer_6">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>20</width>
-                 <height>310</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-            </layout>
-           </widget>
+          <widget class="QTableWidget" name="matrixTable"/>
+          <widget class="QGroupBox" name="groupBox_4">
+           <layout class="QVBoxLayout" name="verticalLayout_13">
+            <item>
+             <widget class="QCheckBox" name="scansiteMatrixCheck">
+              <property name="text">
+               <string>ScanSite 2.0 matrix</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="label_22">
+              <property name="text">
+               <string>Phospho site(s)</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="phosphoLabel"/>
+            </item>
+            <item>
+             <widget class="QPlainTextEdit" name="phosphoEdit"/>
+            </item>
+            <item>
+             <widget class="QPushButton" name="updateMatrixButton">
+              <property name="text">
+               <string>Update matrix</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_6">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>310</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
           </widget>
          </widget>
         </item>
@@ -811,9 +640,14 @@ p, li { white-space: pre-wrap; }
        <attribute name="title">
         <string>Console</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_2">
+       <layout class="QHBoxLayout" name="horizontalLayout_5">
         <item>
-         <widget class="QTextBrowser" name="textBrowser">
+         <widget class="QTextBrowser" name="consoleBrowser">
+          <property name="font">
+           <font>
+            <family>Courier</family>
+           </font>
+          </property>
           <property name="lineWrapMode">
            <enum>QTextEdit::NoWrap</enum>
           </property>
@@ -834,37 +668,38 @@ p, li { white-space: pre-wrap; }
      <height>22</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="actionLoadProject"/>
+    <addaction name="actionSaveProject"/>
+    <addaction name="separator"/>
+    <addaction name="actionLoadImage"/>
+    <addaction name="separator"/>
+    <addaction name="actionExportScansitePssm"/>
+    <addaction name="actionExportAverageIntensities"/>
+    <addaction name="separator"/>
+    <addaction name="actionQuit"/>
+   </widget>
    <widget class="QMenu" name="menuImage">
     <property name="title">
-     <string>Image</string>
+     <string>&amp;Image</string>
     </property>
-    <addaction name="actionOpen"/>
-    <addaction name="actionInvert"/>
+    <addaction name="actionShowInvertedImage"/>
+    <addaction name="actionInvertImage"/>
     <addaction name="separator"/>
-    <addaction name="actionSaveMask"/>
-    <addaction name="actionLoadMask"/>
+    <addaction name="actionClearPatches"/>
+    <addaction name="actionClearLastPatch"/>
+    <addaction name="separator"/>
+    <addaction name="actionCalculateAverages"/>
+   </widget>
+   <widget class="QMenu" name="menuInspector">
+    <property name="title">
+     <string>Inspe&amp;ctor</string>
+    </property>
     <addaction name="actionApplyMask"/>
     <addaction name="actionToggleMask"/>
-    <addaction name="actionSaveMaskImage"/>
-    <addaction name="separator"/>
-    <addaction name="actionClearGrid"/>
-    <addaction name="actionClearRefinement"/>
-    <addaction name="actionClearLastRefinement"/>
-    <addaction name="separator"/>
-    <addaction name="actionSelectBackground"/>
-    <addaction name="actionSubtractBackground"/>
-   </widget>
-   <widget class="QMenu" name="menuCalculate">
-    <property name="title">
-     <string>Inspector</string>
-    </property>
-    <addaction name="actionInvertedImage"/>
-    <addaction name="separator"/>
-    <addaction name="actionCanvasShowImage"/>
-    <addaction name="actionShowAverage"/>
-    <addaction name="separator"/>
-    <addaction name="actionCalculateAverage"/>
-    <addaction name="actionShowCounts"/>
     <addaction name="separator"/>
     <addaction name="actionResetView"/>
     <addaction name="actionLookDownZ"/>
@@ -874,17 +709,15 @@ p, li { white-space: pre-wrap; }
     <property name="title">
      <string>Console</string>
     </property>
-    <addaction name="actionConsoleClear"/>
-    <addaction name="actionExportPspm"/>
-    <addaction name="actionExportAverages"/>
-    <addaction name="actionExportScanSitePssm"/>
+    <addaction name="actionClearConsole"/>
    </widget>
+   <addaction name="menuFile"/>
    <addaction name="menuImage"/>
-   <addaction name="menuCalculate"/>
+   <addaction name="menuInspector"/>
    <addaction name="menuConsole"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <widget class="QToolBar" name="imageToolBar">
+  <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
     <string>toolBar</string>
    </property>
@@ -894,77 +727,75 @@ p, li { white-space: pre-wrap; }
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionOpen"/>
-   <addaction name="actionInvert"/>
+   <addaction name="actionLoadProject"/>
+   <addaction name="actionSaveProject"/>
+   <addaction name="actionLoadImage"/>
    <addaction name="separator"/>
-   <addaction name="actionLoadMask"/>
-   <addaction name="actionSaveMask"/>
+   <addaction name="actionCalculateAverages"/>
    <addaction name="separator"/>
    <addaction name="actionApplyMask"/>
    <addaction name="actionToggleMask"/>
-  </widget>
-  <widget class="QToolBar" name="canvasToolBar">
-   <property name="windowTitle">
-    <string>toolBar_2</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>true</bool>
-   </attribute>
-   <addaction name="actionCanvasShowImage"/>
-   <addaction name="actionShowAverage"/>
    <addaction name="separator"/>
-   <addaction name="actionCalculateAverage"/>
-   <addaction name="actionShowCounts"/>
-   <addaction name="separator"/>
-   <addaction name="actionOrthoView"/>
-   <addaction name="actionLookDownZ"/>
    <addaction name="actionResetView"/>
   </widget>
-  <action name="actionOpen">
-   <property name="text">
-    <string>Open image</string>
+  <action name="actionLoadProject">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/pic/load-project.png</normaloff>:/pic/load-project.png</iconset>
    </property>
-   <property name="statusTip">
-    <string>Open an image</string>
+   <property name="text">
+    <string>Load project</string>
    </property>
   </action>
-  <action name="actionInvert">
+  <action name="actionSaveProject">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/pic/save-project.png</normaloff>:/pic/save-project.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save project</string>
+   </property>
+  </action>
+  <action name="actionLoadImage">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/pic/open-image.png</normaloff>:/pic/open-image.png</iconset>
+   </property>
+   <property name="text">
+    <string>Load image</string>
+   </property>
+  </action>
+  <action name="actionExportScansitePssm">
+   <property name="text">
+    <string>Export Scansite PSSM</string>
+   </property>
+  </action>
+  <action name="actionExportAverageIntensities">
+   <property name="text">
+    <string>Export average intensities</string>
+   </property>
+  </action>
+  <action name="actionQuit">
+   <property name="text">
+    <string>Quit</string>
+   </property>
+  </action>
+  <action name="actionInvertImage">
    <property name="text">
     <string>Invert image</string>
    </property>
-   <property name="statusTip">
-    <string>Invert the image color</string>
-   </property>
   </action>
-  <action name="actionLoadMask">
+  <action name="actionClearPatches">
    <property name="text">
-    <string>Load mask</string>
+    <string>Clear all patches</string>
    </property>
   </action>
-  <action name="actionSaveMask">
+  <action name="actionClearLastPatch">
    <property name="text">
-    <string>Save mask</string>
+    <string>Clear last patch</string>
    </property>
   </action>
-  <action name="actionClearGrid">
-   <property name="text">
-    <string>Clear grid</string>
-   </property>
-  </action>
-  <action name="actionClearRefinement">
-   <property name="text">
-    <string>Clear refinement</string>
-   </property>
-  </action>
-  <action name="actionCalculateAverage">
-   <property name="text">
-    <string>Calculate average</string>
-   </property>
-  </action>
-  <action name="actionCanvasShowImage">
+  <action name="actionShowInvertedImage">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -972,53 +803,34 @@ p, li { white-space: pre-wrap; }
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Show image</string>
-   </property>
-  </action>
-  <action name="actionShowAverage">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Show average</string>
-   </property>
-  </action>
-  <action name="actionResetView">
-   <property name="text">
-    <string>Reset view</string>
-   </property>
-  </action>
-  <action name="actionConsoleClear">
-   <property name="text">
-    <string>Clear</string>
+    <string>Show inverted image</string>
    </property>
   </action>
   <action name="actionApplyMask">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/pic/apply-mask.png</normaloff>:/pic/apply-mask.png</iconset>
+   </property>
    <property name="text">
     <string>Apply mask</string>
    </property>
   </action>
-  <action name="actionSaveMaskImage">
+  <action name="actionToggleMask">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/pic/toggle-mask.png</normaloff>:/pic/toggle-mask.png</iconset>
+   </property>
    <property name="text">
-    <string>Save mask image</string>
+    <string>Toggle mask</string>
    </property>
   </action>
-  <action name="actionSelectBackground">
-   <property name="checkable">
-    <bool>true</bool>
+  <action name="actionResetView">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/pic/reset-view.png</normaloff>:/pic/reset-view.png</iconset>
    </property>
    <property name="text">
-    <string>Select bg range</string>
-   </property>
-  </action>
-  <action name="actionSubtractBackground">
-   <property name="text">
-    <string>Subtract bg</string>
-   </property>
-  </action>
-  <action name="actionShowCounts">
-   <property name="text">
-    <string>Show counts</string>
+    <string>Reset view</string>
    </property>
   </action>
   <action name="actionLookDownZ">
@@ -1037,52 +849,28 @@ p, li { white-space: pre-wrap; }
     <string>Ortho view</string>
    </property>
   </action>
-  <action name="actionClearLastRefinement">
+  <action name="actionCalculateAverages">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/pic/calculate-average.png</normaloff>:/pic/calculate-average.png</iconset>
+   </property>
    <property name="text">
-    <string>Clear last refinement</string>
+    <string>Calculate averages</string>
    </property>
   </action>
-  <action name="actionInvertedImage">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
+  <action name="actionClearConsole">
    <property name="text">
-    <string>Inverted image</string>
-   </property>
-  </action>
-  <action name="actionExportPspm">
-   <property name="text">
-    <string>Export PSPM</string>
-   </property>
-  </action>
-  <action name="actionExportAverages">
-   <property name="text">
-    <string>Export average intensity</string>
-   </property>
-  </action>
-  <action name="actionExportScanSitePssm">
-   <property name="text">
-    <string>Export ScanSite PSSM</string>
-   </property>
-  </action>
-  <action name="actionToggleMask">
-   <property name="text">
-    <string>Toggle mask</string>
+    <string>Clear console</string>
    </property>
   </action>
  </widget>
+ <layoutdefault spacing="9" margin="9"/>
  <customwidgets>
   <customwidget>
-   <class>MyCanvas</class>
+   <class>InspectorCanvas</class>
    <extends>QWidget</extends>
-   <header>MyCanvas.h</header>
+   <header>InspectorCanvas.h</header>
    <container>1</container>
-   <slots>
-    <slot>resetAll()</slot>
-   </slots>
   </customwidget>
   <customwidget>
    <class>ImageCanvas</class>
@@ -1092,25 +880,84 @@ p, li { white-space: pre-wrap; }
  </customwidgets>
  <tabstops>
   <tabstop>tabWidget</tabstop>
-  <tabstop>scrollArea</tabstop>
-  <tabstop>gridColumnSpin</tabstop>
+  <tabstop>scrollArea_2</tabstop>
+  <tabstop>imageScaleSpin</tabstop>
+  <tabstop>gridGroup</tabstop>
+  <tabstop>gridTypeCombo</tabstop>
+  <tabstop>gridOrthoCheck</tabstop>
+  <tabstop>rowColButton</tabstop>
   <tabstop>gridRowSpin</tabstop>
-  <tabstop>gridRadiusSpin</tabstop>
+  <tabstop>gridColumnSpin</tabstop>
+  <tabstop>gridWidthSpin</tabstop>
+  <tabstop>gridHeightSpin</tabstop>
   <tabstop>gridStartXSpin</tabstop>
   <tabstop>gridStartYSpin</tabstop>
   <tabstop>gridEndXSpin</tabstop>
   <tabstop>gridEndYSpin</tabstop>
   <tabstop>gridAngleSpin</tabstop>
-  <tabstop>sensitivitySpin</tabstop>
-  <tabstop>imageScaleSpin</tabstop>
-  <tabstop>textBrowser</tabstop>
+  <tabstop>patchGroup</tabstop>
+  <tabstop>patchNullRadio</tabstop>
+  <tabstop>patchPolygonRadio</tabstop>
+  <tabstop>canvasSensitivitySlider</tabstop>
+  <tabstop>consoleBrowser</tabstop>
+  <tabstop>canvasScaleSlider</tabstop>
  </tabstops>
- <resources/>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
  <connections>
   <connection>
-   <sender>actionConsoleClear</sender>
+   <sender>gridOrthoCheck</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>gridHeightLabel</receiver>
+   <slot>setHidden(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>511</x>
+     <y>178</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>548</x>
+     <y>270</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gridOrthoCheck</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>gridHeightSpin</receiver>
+   <slot>setHidden(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>580</x>
+     <y>180</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>734</x>
+     <y>270</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionQuit</sender>
    <signal>triggered()</signal>
-   <receiver>textBrowser</receiver>
+   <receiver>MainWindow</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionClearConsole</sender>
+   <signal>triggered()</signal>
+   <receiver>consoleBrowser</receiver>
    <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1119,7 +966,7 @@ p, li { white-space: pre-wrap; }
     </hint>
     <hint type="destinationlabel">
      <x>399</x>
-     <y>329</y>
+     <y>304</y>
     </hint>
    </hints>
   </connection>

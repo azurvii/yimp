@@ -1,988 +1,689 @@
 /*
  * MainWindow.cpp
  *
- *  Created on: Feb 26, 2010
+ *  Created on: Jun 2, 2010
  *      Author: Vincent
  */
 
 #include "MainWindow.h"
+#include "HeaderDialog.h"
 #include <QtGui>
 #include "PositionPlotWidget.h"
 #include "DoubleDelegate.h"
-#include "stat.h"
+#include <iostream>
 
-// Arbitrary strings for file type identification purpose
-#define SAVE_FILE_HEADER_V1 ((quint32)0x293F29AC)
-#define SAVE_FILE_HEADER_V2 ((quint32)0x49CF2E98)
-QStringList MainWindow::designRowHeader;
-QStringList MainWindow::designColHeader;
+#define MW_STATUSBAR_TRANSIENT 8000
 
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent) {
-    ui.setupUi(this);
-    ui.imageCanvas->installEventFilter(this);
-    ui.warningLabel->setVisible(false);
-
-    //	connect(ui.myCanvas, SIGNAL(xRotChanged(double)), ui.xRotLcd, SLOT(display(double)));
-    //	connect(ui.myCanvas, SIGNAL(yRotChanged(double)), ui.yRotLcd, SLOT(display(double)));
-    //	connect(ui.myCanvas, SIGNAL(zRotChanged(double)), ui.zRotLcd, SLOT(display(double)));
-    //	connect(ui.myCanvas, SIGNAL(xPanChanged(double)), ui.xPanLcd, SLOT(display(double)));
-    //	connect(ui.myCanvas, SIGNAL(yPanChanged(double)), ui.yPanLcd, SLOT(display(double)));
-    //	connect(ui.myCanvas, SIGNAL(zPanChanged(double)), ui.zPanLcd, SLOT(display(double)));
-    connect(ui.myCanvas, SIGNAL(sensitivityChanged(double)), ui.sensitivitySpin, SLOT(setValue(double)));
-    connect(ui.myCanvas, SIGNAL(imageScaleChanged(double)), ui.imageScaleSpin, SLOT(setValue(double)));
-    connect(ui.gridColumnSpin, SIGNAL(valueChanged(int)), SLOT(updateDrawings()));
-    connect(ui.gridColumnSpin, SIGNAL(valueChanged(int)), SLOT(updatePlotScroll()));
-    connect(ui.gridRowSpin, SIGNAL(valueChanged(int)), SLOT(updateDrawings()));
-    connect(ui.gridRowSpin, SIGNAL(valueChanged(int)), SLOT(updatePlotScroll()));
-    connect(ui.gridRadiusSpin, SIGNAL(valueChanged(double)), SLOT(updateDrawings()));
-    connect(ui.gridStartXSpin, SIGNAL(valueChanged(double)), SLOT(updateDrawings()));
-    connect(ui.gridStartYSpin, SIGNAL(valueChanged(double)), SLOT(updateDrawings()));
-    connect(ui.gridEndXSpin, SIGNAL(valueChanged(double)), SLOT(updateDrawings()));
-    connect(ui.gridEndYSpin, SIGNAL(valueChanged(double)), SLOT(updateDrawings()));
-    connect(ui.gridAngleSpin, SIGNAL(valueChanged(double)), SLOT(updateDrawings()));
-    connect(ui.gridGroup, SIGNAL(toggled(bool)), SLOT(updateDrawings()));
-    connect(ui.refinePointerRadio, SIGNAL(toggled(bool)), SLOT(refineTriggered()));
-    connect(ui.refinePolygonRadio, SIGNAL(toggled(bool)), SLOT(refineTriggered()));
-    connect(ui.actionLookDownZ, SIGNAL(toggled(bool)), ui.myCanvas, SLOT(lookDownZ(bool)));
-    connect(ui.actionOrthoView, SIGNAL(toggled(bool)), ui.myCanvas, SLOT(setOrthoView(bool)));
-    connect(ui.bgStartXSpin, SIGNAL(valueChanged(int)), SLOT(updateDrawings()));
-    connect(ui.bgStartYSpin, SIGNAL(valueChanged(int)), SLOT(updateDrawings()));
-    connect(ui.bgEndXSpin, SIGNAL(valueChanged(int)), SLOT(updateDrawings()));
-    connect(ui.bgEndYSpin, SIGNAL(valueChanged(int)), SLOT(updateDrawings()));
-    connect(ui.scaleSpin, SIGNAL(valueChanged(double)), SLOT(changeScale(double)));
-    connect(ui.imageCanvas, SIGNAL(backgroundMaxChanged(int)), ui.bgMaxSpin, SLOT(setValue(int)));
-    connect(ui.imageCanvas, SIGNAL(backgroundMinChanged(int)), ui.bgMinSpin, SLOT(setValue(int)));
-    connect(this, SIGNAL(scaleChanged(double)), SLOT(changeScale(double)));
-    connect(ui.actionInvertedImage, SIGNAL(toggled(bool)), SLOT(updateDrawings()));
-    connect(ui.plotHeightSpin, SIGNAL(valueChanged(int)), SLOT(resizePlot()));
-    connect(ui.plotWidthSpin, SIGNAL(valueChanged(int)), SLOT(resizePlot()));
-    connect(ui.isScansite2MatrixCheck, SIGNAL(toggled(bool)), SLOT(updateMatrix()));
-
-    QSettings settings;
-    settings.beginGroup("GUI");
-    if (settings.contains("imageSplitterState")) {
-        ui.imageSplitter->restoreState(
-                settings.value("imageSplitterState").toByteArray());
-    }
-    if (settings.contains("canvasSplitterState")) {
-        ui.canvasSplitter->restoreState(
-                settings.value("canvasSplitterState").toByteArray());
-    }
-    if (settings.contains("matrixSplitterState")) {
-        ui.matrixSplitter->restoreState(
-                settings.value("matrixSplitterState").toByteArray());
-    }
-    if (settings.contains("plotSplitterState")) {
-        ui.plotSplitter->restoreState(
-                settings.value("plotSplitterState").toByteArray());
-    }
-    if (settings.contains("windowGeometry")) {
-        restoreGeometry(settings.value("windowGeometry").toByteArray());
-    }
-    if (settings.contains("windowState")) {
-        restoreState(settings.value("windowState").toByteArray());
-    }
-    if (settings.contains("currentTab")) {
-        ui.tabWidget->setCurrentIndex(settings.value("currentTab", 0).toInt());
-    }
-    lastBlotPath = settings.value("lastBlotPath", QDir::homePath()).toString();
-    lastMaskPath = settings.value("lastMaskPath", QDir::homePath()).toString();
-    settings.endGroup();
-
-    ui.imageScaleSpin->setValue(ui.myCanvas->getImageScale());
-    ui.sensitivitySpin->setValue(ui.myCanvas->getSensitivity());
-    //	ui.rotationBaseCombo->setCurrentIndex(ui.myCanvas->getRotationBase());
-
-    imageScale = 1.0;
-    refineType = REF_POINTER;
-    isFirstBgPoint = false;
-    averageModel = 0;
-
-    if (designRowHeader.size() == 0) {
-        designRowHeader << "-5" << "-4" << "-3" << "-2" << "-1" << "+1" << "+2"
-                << "+3" << "+4";
-    }
-    if (designColHeader.size() == 0) {
-        designColHeader << "K" << "I" << "H" << "G" << "F" << "E" << "D" << "C"
-                << "A" << "V" << "T" << "S" << "R" << "Q" << "P" << "N" << "M"
-                << "L" << "pY" << "pT" << "Y" << "W";
-    }
-    rowHeader = designRowHeader;
-    colHeader = designColHeader;
-
-    DoubleDelegate *delegate = new DoubleDelegate(this);
-    ui.matrixTable->setItemDelegate(delegate);
-    maskOn = false;
+MainWindow::MainWindow(QWidget * parent) :
+	QMainWindow(parent) {
+	ui.setupUi(this);
+	transientPeriod = MW_STATUSBAR_TRANSIENT;
+	ui.imageCanvas->installEventFilter(this);
+	// qt connections
+	makeConnections();
+	// other initializations
+	ui.imageOptionGroup->setEnabled(false);
+	ui.overlapLabel->setVisible(false);
+	updateProcessor();
+	updatePatchType();
+	ui.imageCanvas->setImageInverted(ui.actionShowInvertedImage->isChecked());
+	ui.matrixTable->setItemDelegate(new DoubleDelegate(this));
+	// restore settings
+	loadSettings();
 }
 
 MainWindow::~MainWindow() {
 }
 
-bool MainWindow::eventFilter(QObject * watched, QEvent * event) {
-    if (watched == ui.imageCanvas) {
-        if (event->type() == QEvent::MouseButtonPress) {
-            QMouseEvent *mouseEvent = static_cast<QMouseEvent *> (event);
-            int x = trc(mouseEvent->x(), imageScale);
-            int y = trc(mouseEvent->y(), imageScale);
-            if (ui.actionSelectBackground->isChecked()) {
-                if (isFirstBgPoint) {
-                    ui.bgStartXSpin->setValue(x);
-                    ui.bgStartYSpin->setValue(y);
-                    showStatus(tr("Background left-top (%1,%2)").arg(x).arg(y));
-                    isFirstBgPoint = false;
-                } else {
-                    ui.bgEndXSpin->setValue(x);
-                    ui.bgEndYSpin->setValue(y);
-                    showStatus(
-                            tr("Background right-bottom (%1,%2)").arg(x).arg(y));
-                    ui.actionSelectBackground->toggle();
-                }
-            } else {
-                //                const QPixmap *pmap = ui.imageCanvas->pixmap();
-                switch (refineType) {
-                case REF_ELLIPSE:
-                case REF_POINTER:
-                    //                    if (pmap && x < pmap->width() && y < pmap->height()) {
-                    //                        QRgb rgb = pmap->toImage().pixel(x, y);
-                    //                        showStatus(
-                    //                                tr("Color @(%1,%2) is (%3,%4,%5), grayscale %6").arg(
-                    //                                        x).arg(y).arg(qRed(rgb)).arg(
-                    //                                        qGreen(rgb)).arg(qBlue(rgb)).arg(qGray(
-                    //                                        rgb)));
-                    //                    } else {
-                    showStatus(tr("Position (%1,%2)").arg(x).arg(y));
-                    //                    }
-                    break;
-                case REF_POLYGON:
-                    polygon << QPoint(x, y);
-                    showStatus(tr("Polygon point added (%1,%2)").arg(x).arg(y));
-                    break;
-                default:
-                    break;
-                }
-            }
-        } else if (event->type() == QEvent::MouseButtonDblClick) {
-            QMouseEvent *mouseEvent = static_cast<QMouseEvent *> (event);
-            int x = trc(mouseEvent->x(), imageScale);
-            int y = trc(mouseEvent->y(), imageScale);
-            switch (refineType) {
-            case REF_POLYGON:
-                ui.imageCanvas->addPolygon(polygon);
-                polygon = QPolygon();
-                showStatus(tr("Polygon ended (%1,%2)").arg(x).arg(y));
-                ui.imageCanvas->update();
-                break;
-            default:
-                break;
-            }
-        }
-    }
-    return QMainWindow::eventFilter(watched, event);
-}
-
-void MainWindow::on_actionOpen_triggered() {
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Open Image"),
-            lastBlotPath, tr("Images (*.png *.jpg *.bmp *.tif *.tiff)"));
-    if (!fileName.isEmpty()) {
-        lastBlotPath = fileName;
-        ui.bgStartXSpin->setValue(0);
-        ui.bgStartYSpin->setValue(0);
-        ui.bgEndXSpin->setValue(0);
-        ui.bgEndYSpin->setValue(0);
-        ui.imageCanvas->clearBackground();
-        loadImage(fileName);
-        ui.gridStartXSpin->setRange(0, image.width() - 1);
-        ui.gridStartYSpin->setRange(0, image.height() - 1);
-        ui.gridEndXSpin->setRange(0, image.width() - 1);
-        ui.gridEndYSpin->setRange(0, image.height() - 1);
-        ui.bgStartXSpin->setRange(0, image.width() - 1);
-        ui.bgStartYSpin->setRange(0, image.height() - 1);
-        ui.bgEndXSpin->setRange(0, image.width() - 1);
-        ui.bgEndYSpin->setRange(0, image.height() - 1);
-        ui.gridGroup->setChecked(false);
-    }
-}
-
-void MainWindow::on_actionInvert_triggered() {
-    if (image.isNull()) {
-        return;
-    }
-    image.invertPixels();
-    invertedImage.invertPixels();
-    ui.imageCanvas->setImage(&image);
-    updateDrawings();
-    ui.myCanvas->updateGL();
-}
-
-void MainWindow::on_sensitivitySpin_valueChanged(double sen) {
-    ui.myCanvas->setSensitivity(sen);
-}
-
 void MainWindow::on_imageScaleSpin_valueChanged(double scale) {
-    if (image.isNull()) {
-        return;
-    }
-    ui.myCanvas->setImageScale(scale);
+	ui.imageCanvas->setScale(scale);
 }
 
-void MainWindow::on_actionShowAverage_toggled(bool shown) {
-    if (image.isNull()) {
-        return;
-    }
-    if (!ui.myCanvas->hasResults()) {
-        ui.actionCalculateAverage->trigger();
-    }
-    ui.myCanvas->drawAverages(shown);
+void MainWindow::updateTypeLabels() {
+	QString orthoLabel, widthLabel;
+	switch (ui.gridTypeCombo->currentIndex()) {
+	case 0:
+		orthoLabel = tr("Circle");
+		ui.gridOrthoCheck->isChecked() ? widthLabel = tr("Radius") : widthLabel
+				= tr("Width");
+		processor.setGridType(Grid::GRID_ELLIPSE);
+		break;
+	case 1:
+		orthoLabel = tr("Square");
+		ui.gridOrthoCheck->isChecked() ? widthLabel = tr("Side") : widthLabel
+				= tr("Width");
+		processor.setGridType(Grid::GRID_RECTANGLE);
+		break;
+	default:
+		processor.setGridType(Grid::GRID_NULL);
+		break;
+	}
+	ui.gridOrthoCheck->setText(orthoLabel);
+	ui.gridWidthLabel->setText(widthLabel);
+	processor.setGridOrtho(ui.gridOrthoCheck->isChecked());
 }
 
-void MainWindow::on_actionCanvasShowImage_toggled(bool shown) {
-    if (image.isNull()) {
-        return;
-    }
-    ui.myCanvas->drawImage(shown);
+void MainWindow::updatePatchType() {
+	if (ui.patchPolygonRadio->isChecked()) {
+		patchType = Patch::PATCH_POLYGON;
+	} else {
+		patchType = Patch::PATCH_NULL;
+	}
 }
 
-void MainWindow::on_actionResetView_triggered() {
-    ui.myCanvas->resetAll();
+void MainWindow::on_rowColButton_clicked() {
+	HeaderDialog hd(this);
+	hd.setRowHeaders(processor.getImageRowHeaders());
+	hd.setColumnHeaders(processor.getImageColumnHeaders());
+	if (hd.exec() == QDialog::Accepted) {
+		QStringList headers = hd.getHeaders();
+		QStringList rowHeaders = headers[Processor::HEADER_ROW].split(QRegExp(
+				"\\s+"), QString::SkipEmptyParts);
+		QStringList colHeaders = headers[Processor::HEADER_COL].split(QRegExp(
+				"\\s+"), QString::SkipEmptyParts);
+		if (rowHeaders.size() > 0) {
+			processor.setRowHeaders(rowHeaders);
+		}
+		if (colHeaders.size() > 0) {
+			processor.setColHeaders(colHeaders);
+		}
+	}
 }
 
-void MainWindow::on_actionShowCounts_triggered() {
-    if (image.isNull()) {
-        return;
-    }
-    if (!ui.myCanvas->hasResults()) {
-        ui.actionCalculateAverage->trigger();
-    }
-    QVector<QVector<int> > counts = ui.myCanvas->getLastCounts(true);
-    log(tr("Counts:"));
-    for (QVector<QVector<int> >::const_iterator itr = counts.begin(); itr
-            != counts.end(); ++itr) {
-        QString line;
-        for (QVector<int>::const_iterator rowItr = itr->begin(); rowItr
-                != itr->end(); ++rowItr) {
-            line += QString::number(*rowItr) + ",";
-        }
-        log(line);
-    }
-    log(tr("----------------Finished----------------"));
+bool MainWindow::eventFilter(QObject * watched, QEvent * event) {
+	// ellipse and rectangle patches not yet implemented
+	if (watched == ui.imageCanvas) {
+		if (event->type() == QEvent::MouseButtonPress) {
+			QMouseEvent *mouseEvent = static_cast<QMouseEvent *> (event);
+			// get the real coordinates on the image
+			int x = trc(mouseEvent->x(), ui.imageScaleSpin->value());
+			int y = trc(mouseEvent->y(), ui.imageScaleSpin->value());
+			const QImage & im = processor.getImage();
+			if (ui.patchGroup->isChecked()) {
+				switch (patchType) {
+				case Patch::PATCH_NULL:
+				case Patch::PATCH_ELLIPSE:
+				case Patch::PATCH_RECTANGLE:
+					patchPolygon.clear();
+					if (x < im.width() && y < im.height()) {
+						showStatus(tr("(%1, %2) Gray %3").arg(x).arg(y).arg(
+								qGray(im.pixel(x, y))));
+					}
+					break;
+				case Patch::PATCH_POLYGON:
+					patchPolygon << QPoint(x, y);
+					showStatus(tr("(%1, %2) in polygon").arg(x).arg(y));
+					break;
+				}
+			} else {
+				if (x < im.width() && y < im.height()) {
+					showStatus(tr("(%1, %2) Gray %3").arg(x).arg(y).arg(qGray(
+							im.pixel(x, y))));
+				}
+			}
+		} else if (event->type() == QEvent::MouseButtonDblClick) {
+			QMouseEvent *mouseEvent = static_cast<QMouseEvent *> (event);
+			int x = trc(mouseEvent->x(), ui.imageScaleSpin->value());
+			int y = trc(mouseEvent->y(), ui.imageScaleSpin->value());
+			// Because the MouseButtonPress event occurs before double click
+			// here we don't need to add the point to the polygon again
+			if (ui.patchGroup->isChecked()) {
+				Patch patch(patchType);
+				switch (patchType) {
+				case Patch::PATCH_POLYGON:
+					patch.setType(Patch::PATCH_POLYGON);
+					patch.setPolygon(patchPolygon);
+					processor.appendPatch(patch);
+					patchPolygon = QPolygon();
+					showStatus(tr("(%1, %2) ended polygon").arg(x).arg(y));
+					break;
+				default:
+					break;
+				}
+			}
+		}
+	}
+	return QMainWindow::eventFilter(watched, event);
 }
 
-void MainWindow::on_actionClearLastRefinement_triggered() {
-    if (image.isNull()) {
-        return;
-    }
-    ui.imageCanvas->clearLastPolygon();
-    ui.imageCanvas->update();
+void MainWindow::initProject() {
+	const QImage & image = processor.getImage();
+	ui.gridHeightSpin->setRange(0, image.height() - 1);
+	ui.gridHeightSpin->setValue(0);
+	ui.gridWidthSpin->setRange(0, image.width() - 1);
+	ui.gridWidthSpin->setValue(0);
+	ui.gridStartXSpin->setRange(0, image.width() - 1);
+	ui.gridStartXSpin->setValue(0);
+	ui.gridStartYSpin->setRange(0, image.height() - 1);
+	ui.gridStartYSpin->setValue(0);
+	ui.gridEndXSpin->setRange(0, image.width() - 1);
+	ui.gridEndXSpin->setValue(0);
+	ui.gridEndYSpin->setRange(0, image.height() - 1);
+	ui.gridEndYSpin->setValue(0);
+	//	ui.gridGroup->setChecked(false);
+	ui.imageCanvas->showGrid(ui.gridGroup->isChecked());
+	//	ui.patchGroup->setChecked(false);
+	ui.imageCanvas->showPatches(ui.patchGroup->isChecked());
+	ui.imageOptionGroup->setEnabled(true);
+	imageMasked = false;
 }
 
-void MainWindow::on_actionSelectBackground_toggled(bool select) {
-    if (image.isNull()) {
-        return;
-    }
-    isFirstBgPoint = select;
-    ui.imageCanvas->drawBackground(!select);
+void MainWindow::showStatus(const QString & message) {
+	statusBar()->showMessage(message, transientPeriod);
+	log(message);
 }
 
-//void MainWindow::on_rotationBaseCombo_currentIndexChanged(int index) {
-//	ui.myCanvas->setRotationBase((MyCanvas::RotBase) index);
-//}
-
-void MainWindow::log(const QString &line) {
-    ui.textBrowser->append(line);
+int MainWindow::trc(int x, double factor) {
+	return x / factor;
 }
 
-void MainWindow::updateDrawings() {
-    ui.imageCanvas->clearCircleGrid();
-    if (ui.gridGroup->isChecked()) {
-        int startX = ui.gridStartXSpin->value();
-        int startY = ui.gridStartYSpin->value();
-        int endX = ui.gridEndXSpin->value();
-        int endY = ui.gridEndYSpin->value();
-        double angle = ui.gridAngleSpin->value();
-        int col = ui.gridColumnSpin->value();
-        int row = ui.gridRowSpin->value();
-        double radius = ui.gridRadiusSpin->value();
-        if ((col > 1 && (endX - startX) / (col - 1) < radius * 2) || (row > 1
-                && (endY - startY) / (row - 1) < radius * 2)) {
-            ui.warningLabel->setVisible(true);
-        } else {
-            ui.warningLabel->setVisible(false);
-        }
-        ui.imageCanvas->addCircleGrid(startX, startY, endX, endY, radius, col,
-                row, angle);
-    }
-    if (ui.bgGroup->isChecked()) {
-        ui.imageCanvas->drawBackground(ui.bgStartXSpin->value(),
-                ui.bgStartYSpin->value(), ui.bgEndXSpin->value(),
-                ui.bgEndYSpin->value());
-    } else {
-        ui.imageCanvas->clearBackground();
-    }
-    ui.imageCanvas->update();
+int MainWindow::tsc(int x, double factor) {
+	return x * factor;
 }
 
-void MainWindow::on_actionToggleMask_triggered() {
-    if (image.isNull()) {
-        return;
-    }
-    if (maskOn) {
-        ui.myCanvas->disableMask();
-        ui.myCanvas->update();
-    } else {
-        QBitmap mask = ui.imageCanvas->getMask();
-        ui.myCanvas->setMask(mask);
-        //  QPixmap pmap = *ui.imageCanvas->pixmap();
-        //  pmap.setMask(mask);
-        //  ui.imageCanvas->setPixmap(pmap);
-        ui.myCanvas->update();
-        //  ui.imageCanvas->update();
-    }
-    maskOn = !maskOn;
+void MainWindow::on_actionLoadImage_triggered() {
+	QString filePath = QFileDialog::getOpenFileName(this, tr("Load Image"),
+			lastImagePath, tr("Images (*.png *.jpg *.jpeg *.bmp "
+				"*.tif *.tiff *.gif *.xbm *.xpm)"));
+	if (filePath.isEmpty()) {
+		return;
+	}
+	lastImagePath = filePath;
+	processor.loadImage(filePath);
+	initProject();
+	log(tr("Size:   %1x%2").arg(processor.getImage().width()).arg(
+			processor.getImage().height()));
+	log(tr("Format: %1").arg(getFormatName(processor.getImage().format())));
+	showStatus(tr("** Loaded image \"%1\"").arg(filePath));
+}
+
+void MainWindow::updateProcessorStartPoint() {
+	processor.setGridStartPoint(QPoint(ui.gridStartXSpin->value(),
+			ui.gridStartYSpin->value()));
+}
+
+void MainWindow::updateProcessorEndPoint() {
+	processor.setGridEndPoint(QPoint(ui.gridEndXSpin->value(),
+			ui.gridEndYSpin->value()));
+}
+
+void MainWindow::updateProcessor() {
+	processor.setGridAngle(ui.gridAngleSpin->value());
+	processor.setGridDimension(ui.gridRowSpin->value(),
+			ui.gridColumnSpin->value());
+	processor.setGridElementHeight(ui.gridHeightSpin->value());
+	processor.setGridElementWidth(ui.gridWidthSpin->value());
+	updateTypeLabels();
+	updateProcessorStartPoint();
+	updateProcessorEndPoint();
+}
+
+void MainWindow::closeEvent(QCloseEvent * event) {
+	saveSettings();
+	event->accept();
+}
+
+void MainWindow::on_canvasSensitivitySlider_valueChanged(int sensitivityValue) {
+	ui.inspectorCanvas->setSensitivity(sensitivityValue / 100.0);
+}
+
+void MainWindow::on_canvasScaleSlider_valueChanged(int scaleValue) {
+	ui.inspectorCanvas->setUnitScale(scaleValue / 100.0);
 }
 
 void MainWindow::on_actionApplyMask_triggered() {
-    if (image.isNull()) {
-        return;
-    }
-    maskOn = true;
-    QBitmap mask = ui.imageCanvas->getMask();
-    ui.myCanvas->setMask(mask);
-    //  QPixmap pmap = *ui.imageCanvas->pixmap();
-    //  pmap.setMask(mask);
-    //  ui.imageCanvas->setPixmap(pmap);
-    ui.myCanvas->update();
-    //  ui.imageCanvas->update();
+	imageMasked = true;
+	processor.setMask(ui.imageCanvas->getMask());
+	updateInspector();
 }
 
-void MainWindow::on_actionSaveMask_triggered() {
-    if (image.isNull()) {
-        return;
-    }
-    QString fileName = QFileDialog::getSaveFileName(this, tr("Save project"),
-            lastMaskPath, tr("YIMP Projects (*.yim)"));
-    if (fileName.isEmpty()) {
-        return;
-    }
-    lastMaskPath = fileName;
-    if (!fileName.endsWith(".yim", Qt::CaseInsensitive)) {
-        fileName += ".yim";
-    }
-    QFile file(fileName);
-    file.open(QFile::WriteOnly);
-    QDataStream ds(&file);
-    //    ds.setVersion(QDataStream::Qt_4_6);
-    ds << SAVE_FILE_HEADER_V1;
-    //	ds << ui.imageCanvas->getGridStartPoint();
-    //	ds << ui.imageCanvas->getGrid();
-    ds << ui.imageCanvas->getPolygons();
-    //	ds << ui.imageCanvas->getGridAngle();
-    int cols = ui.gridColumnSpin->value();
-    int rows = ui.gridRowSpin->value();
-    ds << cols;
-    ds << rows;
-    ds << ui.gridAngleSpin->value();
-    ds << ui.gridStartXSpin->value();
-    ds << ui.gridStartYSpin->value();
-    ds << ui.gridEndXSpin->value();
-    ds << ui.gridEndYSpin->value();
-    ds << ui.gridRadiusSpin->value();
+void MainWindow::updateInspector() {
+	if (processor.getImage().isNull()) {
+		return;
+	}
+	ui.inspectorCanvas->setMaxColor(processor.getGrayMax());
+	ui.inspectorCanvas->setMinColor(processor.getGrayMin());
+	ui.inspectorCanvas->setUpperBorder(processor.getUpperBorder());
+	ui.inspectorCanvas->setLowerBorder(processor.getLowerBorder());
+	if (imageMasked) {
+		if (!processor.isReady(Processor::MATRIX_MASKED_GRAY_VALUE)) {
+			return;
+		}
+		ui.inspectorCanvas->setMatrix(&processor.getMatrix(
+				Processor::MATRIX_MASKED_GRAY_VALUE));
+	} else {
+		if (!processor.isReady(Processor::MATRIX_GRAY_VALUE)) {
+			return;
+		}
+		ui.inspectorCanvas->setMatrix(&processor.getMatrix(
+				Processor::MATRIX_GRAY_VALUE));
+	}
 }
 
-void MainWindow::on_actionSaveMaskImage_triggered() {
-    if (image.isNull()) {
-        return;
-    }
-    QString fileName = QFileDialog::getSaveFileName(this,
-            tr("Save mask image"), lastMaskPath, tr(
-                    "Images (*.jpg *.png *.tif *.tiff)"));
-    if (fileName.isEmpty()) {
-        return;
-    }
-    lastMaskPath = fileName;
-    ui.imageCanvas->getMask().save(fileName);
+void MainWindow::on_actionInvertImage_triggered() {
+	processor.invertImage();
 }
 
-void MainWindow::on_actionLoadMask_triggered() {
-    if (image.isNull()) {
-        return;
-    }
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Open mask"),
-            lastMaskPath, tr("YIMP Masks (*.yim)"));
-    if (fileName.isEmpty()) {
-        return;
-    }
-    lastMaskPath = fileName;
-    QFile file(fileName);
-    file.open(QFile::ReadOnly);
-    QDataStream ds(&file);
-    //    ds.setVersion(QDataStream::Qt_4_6);
-    quint32 header;
-    ds >> header;
-    if (!(header == SAVE_FILE_HEADER_V1 || header == SAVE_FILE_HEADER_V2)) {
-        QMessageBox::critical(this, tr("Error"), tr(
-                "This is not a valid mask file."));
-        return;
-    }
-    //	QList<QRect> grid;
-    QVector<QPolygon> polygons;
-    //	QPoint gridStart;
-    double gridAngle, radius;
-    double startX, startY, endX, endY;
-    int col, row;
-    ds >> polygons >> col >> row >> gridAngle >> startX >> startY >> endX
-            >> endY >> radius;
-    //	ui.imageCanvas->loadCircleGrid(grid);
-    //	ui.imageCanvas->loadGridStartPoint(gridStart);
-    ui.imageCanvas->loadPolygons(polygons);
-    //	ui.imageCanvas->loadGridAngle(gridAngle);
-    ui.gridColumnSpin->setValue(col);
-    ui.gridRowSpin->setValue(row);
-    ui.gridAngleSpin->setValue(gridAngle);
-    ui.gridStartXSpin->setValue(startX);
-    ui.gridStartYSpin->setValue(startY);
-    ui.gridEndXSpin->setValue(endX);
-    ui.gridEndYSpin->setValue(endY);
-    ui.gridRadiusSpin->setValue(radius);
-    //    if (header == SAVE_FILE_HEADER_V2) {
-    //
-    //    }
-    //	ui.imageCanvas->update();
-    ui.gridGroup->setChecked(true);
-    updateDrawings();
-    ui.actionApplyMask->trigger();
-}
-
-void MainWindow::on_actionExportPspm_triggered() {
-    if (image.isNull()) {
-        return;
-    }
-    QString fileName = QFileDialog::getSaveFileName(this, tr("Save PSPM"),
-            QDir::homePath(), tr("Comma-separated values (*.csv)"));
-    if (fileName.isEmpty()) {
-        return;
-    }
-
-    if (!fileName.endsWith(".csv", Qt::CaseInsensitive)) {
-        fileName += ".csv";
-    }
-    QFile file(fileName);
-    file.open(QFile::WriteOnly);
-    QTextStream ds(&file);
-
-    log(tr("Exporting PSPM..."));
-    QVector<QVector<double> > aves = ui.myCanvas->calculateAverages(
-            ui.imageCanvas->getGrid(), ui.gridColumnSpin->value(),
-            ui.imageCanvas->getGridStartPoint());
-
-    QVector<QVector<double> > output(aves.front().size());
-    for (int i = 0; i < aves.size(); ++i) {
-        double rowsum = 0.0;
-        for (int j = 0; j < aves.front().size(); ++j) {
-            rowsum += aves[i][j];
-        }
-        for (int j = 0; j < aves.front().size(); ++j) {
-            output[j] << aves[i][j] / rowsum;
-        }
-    }
-
-    for (int i = 0; i < output.size(); ++i) {
-        QString line;
-        for (int j = 0; j < output[i].size(); ++j) {
-            line += QString::number(output[i][j]);
-            if (j != output[i].size() - 1) {
-                line += ",";
-            }
-        }
-        ds << line << "\n";
-    }
-    log(tr("----------------Finished----------------"));
-}
-
-void MainWindow::on_actionExportAverages_triggered() {
-    if (image.isNull()) {
-        return;
-    }
-    QString fileName = QFileDialog::getSaveFileName(this, tr("Save averages"),
-            QDir::homePath(), tr("Comma-separated values (*.csv)"));
-    if (fileName.isEmpty()) {
-        return;
-    }
-
-    if (!fileName.endsWith(".csv", Qt::CaseInsensitive)) {
-        fileName += ".csv";
-    }
-    QFile file(fileName);
-    file.open(QFile::WriteOnly);
-    QTextStream ds(&file);
-
-    log(tr("Exporting averages..."));
-    QVector<QVector<double> > aves = ui.myCanvas->calculateAverages(
-            ui.imageCanvas->getGrid(), ui.gridColumnSpin->value(),
-            ui.imageCanvas->getGridStartPoint());
-
-    QVector<QVector<double> > output(aves.front().size());
-    for (int i = 0; i < aves.size(); ++i) {
-        for (int j = 0; j < aves.front().size(); ++j) {
-            output[j] << aves[i][j];
-        }
-    }
-
-    for (int i = 0; i < output.size(); ++i) {
-        QString line;
-        for (int j = 0; j < output[i].size(); ++j) {
-            line += QString::number(output[i][j]);
-            if (j != output[i].size() - 1) {
-                line += ",";
-            }
-        }
-        ds << line << "\n";
-    }
-    log(tr("----------------Finished----------------"));
-}
-
-void MainWindow::on_actionExportScanSitePssm_triggered() {
-    if (image.isNull()) {
-        return;
-    }
-    QString fileName = QFileDialog::getSaveFileName(this, tr(
-            "Save ScanSite PSSM"), QDir::homePath(),
-            tr("ScanSite PSSM (*.txt)"));
-    if (fileName.isEmpty()) {
-        return;
-    }
-
-    if (!fileName.endsWith(".txt", Qt::CaseInsensitive)) {
-        fileName += ".txt";
-    }
-    QFile file(fileName);
-    file.open(QFile::WriteOnly);
-    QTextStream ds(&file);
-
-    log(tr("Exporting ScanSite PSSM..."));
-    QStandardItemModel *theModel =
-            static_cast<QStandardItemModel *> (ui.matrixTable->model());
-    QString hheader;
-    for (int j = 0; j < theModel->columnCount(); ++j) {
-        hheader
-                += theModel->headerData(j, Qt::Horizontal, Qt::DisplayRole).toString();
-        if (j < theModel->columnCount() - 1) {
-            hheader += "\t";
-        }
-    }
-    ds << hheader << "\n";
-    for (int i = 0; i < theModel->rowCount(); ++i) {
-        QString line;
-        for (int j = 0; j < theModel->columnCount(); ++j) {
-            line += QString::number(
-                    theModel->item(i, j)->data(Qt::DisplayRole).toDouble());
-            if (j < theModel->columnCount() - 1) {
-                line += "\t";
-            }
-        }
-        ds << line << "\n";
-    }
-    log(tr("----------------Finished----------------"));
-}
-
-void MainWindow::on_actionClearRefinement_triggered() {
-    if (image.isNull()) {
-        return;
-    }
-    ui.imageCanvas->clearPolygons();
-    ui.actionApplyMask->trigger();
-}
-
-void MainWindow::on_actionClearGrid_triggered() {
-    if (image.isNull()) {
-        return;
-    }
-    ui.imageCanvas->clearCircleGrid();
-    ui.actionApplyMask->trigger();
-}
-
-void MainWindow::on_actionCalculateAverage_triggered() {
-    if (image.isNull()) {
-        return;
-    }
-    QVector<QVector<double> > aves = ui.myCanvas->calculateAverages(
-            ui.imageCanvas->getGrid(), ui.gridColumnSpin->value(),
-            ui.imageCanvas->getGridStartPoint());
-    log(tr("Averages:"));
-    if (averageModel) {
-        delete averageModel;
-    }
-    averageModel = new QStandardItemModel(rowHeader.size(), colHeader.size());
-    averageModel->setHorizontalHeaderLabels(colHeader);
-    averageModel->setVerticalHeaderLabels(rowHeader);
-    QStandardItem *item;
-    QVector<QVector<double> > output(aves.front().size());
-    for (int i = 0; i < aves.size(); ++i) {
-        for (int j = 0; j < aves.front().size(); ++j) {
-            output[j] << aves[i][j];
-            item = new QStandardItem;
-            item->setData(aves[i][j], Qt::DisplayRole);
-            averageModel->setItem(i, j, item);
-        }
-    }
-    updatePlotScroll();
-    updatePlot();
-    updateMatrix();
-    for (int i = 0; i < output.size(); ++i) {
-        QString line;
-        for (int j = 0; j < output[i].size(); ++j) {
-            line += QString::number(output[i][j]);
-            if (j != output[i].size() - 1) {
-                line += ",";
-            }
-        }
-        log(line);
-    }
-    log(tr("----------------Finished----------------"));
-}
-
-void MainWindow::on_actionSubtractBackground_triggered() {
-    if (image.isNull()) {
-        return;
-    }
-    int bgValue;
-    bool inv = ui.actionInvertedImage->isChecked();
-    if (inv) {
-        bgValue = maxColor - ui.bgMinSpin->value();
-    } else {
-        bgValue = ui.bgMinSpin->value();
-    }
-    int pixelValue = 0;
-    QImage image;
-    if (inv) {
-        image = this->invertedImage;
-    } else {
-        image = this->image;
-    }
-    for (int i = 0; i < image.width(); ++i) {
-        for (int j = 0; j < image.height(); ++j) {
-            pixelValue = qGray(image.pixel(i, j)) - bgValue;
-            if (pixelValue < 0) {
-                pixelValue = 0;
-            }
-            image.setPixel(i, j, (uint) pixelValue);
-        }
-    }
-    if (inv) {
-        this->invertedImage = image;
-        image.invertPixels();
-        this->image = image;
-    } else {
-        this->image = image;
-        image.invertPixels();
-        this->invertedImage = image;
-    }
-    ui.imageCanvas->setImage(&this->image);
-    if (inv) {
-        ui.myCanvas->renderGrayQImage(this->invertedImage);
-    } else {
-        ui.myCanvas->renderGrayQImage(this->image);
-    }
-}
-
-void MainWindow::closeEvent(QCloseEvent *event) {
-    QSettings settings;
-    settings.beginGroup("GUI");
-    settings.setValue("imageSplitterState", ui.imageSplitter->saveState());
-    settings.setValue("plotSplitterState", ui.plotSplitter->saveState());
-    settings.setValue("canvasSplitterState", ui.canvasSplitter->saveState());
-    settings.setValue("matrixSplitterState", ui.matrixSplitter->saveState());
-    settings.setValue("lastBlotPath", lastBlotPath);
-    settings.setValue("lastMaskPath", lastMaskPath);
-    settings.setValue("currentTab", ui.tabWidget->currentIndex());
-    settings.setValue("windowGeometry", saveGeometry());
-    settings.setValue("windowState", saveState());
-    QMainWindow::closeEvent(event);
-    settings.endGroup();
-    settings.sync();
-    event->accept();
-}
-
-void MainWindow::refineTriggered() {
-    if (ui.refinePointerRadio->isChecked()) {
-        refineType = REF_POINTER;
-    } else if (ui.refinePolygonRadio->isChecked()) {
-        refineType = REF_POLYGON;
-        polygon = QPolygon();
-    }
-}
-
-void MainWindow::loadImage(const QString fileName) {
-    rowHeader = designRowHeader;
-    colHeader = designColHeader;
-    image.load(fileName);
-    invertedImage = image;
-    int grayDepth = image.depth();
-    if (!image.isGrayscale()) {
-        grayDepth = grayDepth / 4;
-    }
-    maxColor = (int) pow(2.0, (double) grayDepth) - 1;
-    invertedImage.invertPixels();
-    ui.imageCanvas->setImage(&image);
-    if (ui.actionInvertedImage->isChecked()) {
-        ui.myCanvas->renderGrayQImage(invertedImage);
-    } else {
-        ui.myCanvas->renderGrayQImage(image);
-    }
-
-    log(tr("File: %1").arg(fileName));
-    log(tr("Size: %1x%2").arg(image.width()).arg(image.height()));
-    log(tr("Format: %1 (%2)").arg(getFormatName(image.format())).arg(
-            (int) image.format()));
-    log(tr("Grayscale: %1").arg(image.isGrayscale() ? tr("Yes") : tr("No")));
-    log(tr("Depth: %1").arg(image.depth()));
-    log(tr("----------------Finished----------------"));
-
+void MainWindow::log(const QString &message) {
+	ui.consoleBrowser->append(message);
 }
 
 QString MainWindow::getFormatName(QImage::Format format) {
-    switch (format) {
-    case QImage::Format_Mono:
-        return tr("Mono");
-        break;
-    case QImage::Format_Indexed8:
-        return tr("Indexed8");
-        break;
-    case QImage::Format_RGB16:
-        return tr("RGB16");
-        break;
-    case QImage::Format_RGB32:
-        return tr("RGB32");
-        break;
-    case QImage::Format_ARGB32:
-        return tr("ARGB32");
-        break;
-    case QImage::Format_Invalid:
-        return tr("Invalid");
-        break;
-    default:
-        return tr("Unknown");
-        break;
-    }
-}
-
-void MainWindow::showStatus(const QString &statusMessage) {
-    ui.statusbar->showMessage(statusMessage);
-}
-
-void MainWindow::scaleImage(double scale) {
-    if (!ui.imageCanvas->pixmap()) {
-        return;
-    }
-    if (imageScale != scale) {
-        double width = image.width() * scale;
-        double height = image.height() * scale;
-        imageScale = scale;
-        QPixmap pmap = QPixmap::fromImage(image).scaled(width, height);
-        //        resize(scale * pixmap()->size());
-        ui.imageCanvas->setPixmap(pmap);
-        emit scaleChanged(scale);
-    }
-}
-
-void MainWindow::changeScale(double scale) {
-    scaleImage(scale);
-    ui.scaleSpin->setValue(scale);
-    ui.imageCanvas->setScale(scale);
-    updateDrawings();
-}
-
-void MainWindow::updatePlotScroll() {
-    if (ui.plotScroll->widget()) {
-        delete ui.plotScroll->takeWidget();
-    }
-    QWidget *cWidget = new QWidget(this);
-    QVBoxLayout *vlayout = new QVBoxLayout;
-    posPlotWidgets.clear();
-    PositionPlotWidget *ppw;
-    for (int i = 0; i < rowHeader.size(); ++i) {
-        ppw = new PositionPlotWidget(this);
-        vlayout->addWidget(ppw);
-        ppw->setRange(0, maxColor);
-        ppw->setPlotName(rowHeader[i]);
-        //        connect(ui.plotHeightSpin, SIGNAL(valueChanged(int)), ppw, SLOT(setPlotHeight(int)));
-        //        connect(ui.plotWidthSpin, SIGNAL(valueChanged(int)), ppw, SLOT(setPlotWidth(int)));
-        connect(ui.plotTickSpin, SIGNAL(valueChanged(int)), ppw, SLOT(setAxisTicks(int)));
-        connect(ppw, SIGNAL(madsChanged(double)), SLOT(updateMatrix()));
-        posPlotWidgets.append(ppw);
-    }
-    cWidget->setLayout(vlayout);
-    ui.plotScroll->setWidget(cWidget);
-    resizePlot();
-}
-
-void MainWindow::updatePlot() {
-    if (averageModel) {
-        int rows = averageModel->rowCount();
-        int cols = averageModel->columnCount();
-        QStringList rowString;
-        QList<double> rowData;
-        for (int i = 0; i < rows; ++i) {
-            rowString.clear();
-            rowData.clear();
-            for (int j = 0; j < cols; ++j) {
-                rowString << colHeader[j];
-                rowData.append(
-                        averageModel->item(i, j)->data(Qt::DisplayRole).toDouble());
-            }
-            posPlotWidgets[i]->setData(rowString, rowData);
-            posPlotWidgets[i]->setPlotName(rowHeader[i]);
-            posPlotWidgets[i]->update();
-        }
-    }
-}
-
-void MainWindow::updateMatrix() {
-    QStandardItemModel *displayModel;
-    if (ui.isScansite2MatrixCheck->isChecked()) {
-        displayModel = new QStandardItemModel(15, averageModel->columnCount());
-        QStringList dispRowHeader;
-        QStringList dispColHeader = colHeader;
-        dispRowHeader << "-7" << "-6" << "-5" << "-4" << "-3" << "-2" << "-1"
-                << "0" << "+1" << "+2" << "+3" << "+4" << "+5" << "+6" << "+7";
-        displayModel->setVerticalHeaderLabels(dispRowHeader);
-        displayModel->insertColumn(displayModel->columnCount()); // Add terminal penalty column
-        dispColHeader << "*";
-        displayModel->setHorizontalHeaderLabels(dispColHeader);
-        QStandardItem *item;
-        QStringList phosphoList = getResidues(ui.phosphoEdit);
-        QList<int> phosphoIndeces;
-        for (int j = 0; j < phosphoList.size(); ++j) {
-            phosphoIndeces << colHeader.indexOf(phosphoList[j]);
-        }
-        for (int i = 0; i < displayModel->rowCount(); ++i) {
-            if ((i >= 2 && i <= 6) || (i >= 8 && i <= 11)) {
-                // real data go here
-                int ssRow = i - 2;
-                if (i > 7) {
-                    --ssRow;
-                }
-                // Get the denominator
-                double posMedian = posPlotWidgets[ssRow]->getMedian();
-                double posMads = posPlotWidgets[ssRow]->getMads();
-                double posMad = posPlotWidgets[ssRow]->getMad();
-                double upBound = posMedian + posMad * posMads;
-                double loBound = posMedian - posMad * posMads;
-                QList<double> data;
-                for (int j = 0; j < averageModel->columnCount(); ++j) {
-                    data
-                            << averageModel->item(ssRow, j)->data(
-                                    Qt::DisplayRole).toDouble();
-                }
-                QList<double> nonsel;
-                for (int j = 0; j < data.size(); ++j) {
-                    if (phosphoIndeces.contains(ssRow)) {
-                        nonsel << data[j];
-                    } else if (data[j] <= upBound && data[j] >= loBound) {
-                        nonsel << data[j];
-                    }
-                }
-                double denom = mean(nonsel);
-                for (int j = 0; j < displayModel->columnCount() - 1; ++j) {
-                    item = new QStandardItem;
-                    if (j < averageModel->columnCount()) {
-                        item->setData(averageModel->item(ssRow, j)->data(
-                                Qt::DisplayRole).toDouble() / denom,
-                                Qt::DisplayRole);
-                    } else {
-                        item->setData(0, Qt::DisplayRole);
-                    }
-                    displayModel->setItem(i, j, item);
-                }
-            } else {
-                // Padding zeros or ones
-                for (int j = 0; j < displayModel->columnCount() - 1; ++j) {
-                    if (i == 7) {
-                        if (phosphoIndeces.contains(j)) {
-                            item = new QStandardItem;
-                            item->setData(21, Qt::DisplayRole);
-                            displayModel->setItem(i, j, item);
-                        } else {
-                            item = new QStandardItem;
-                            item->setData(0, Qt::DisplayRole);
-                            displayModel->setItem(i, j, item);
-                        }
-                    } else {
-                        item = new QStandardItem;
-                        item->setData(1, Qt::DisplayRole);
-                        displayModel->setItem(i, j, item);
-                    }
-                }
-            }
-            // Terminal penalty column
-            item = new QStandardItem;
-            item->setData(0.0001, Qt::DisplayRole);
-            displayModel->setItem(i, displayModel->columnCount() - 1, item);
-        }
-    } else {
-        displayModel = averageModel;
-    }
-    ui.matrixTable->setModel(displayModel);
+	switch (format) {
+	case QImage::Format_Mono:
+		return tr("1-bit/pixel image");
+		break;
+	case QImage::Format_Indexed8:
+		return tr("8-bit indexed colormap.");
+		break;
+	case QImage::Format_RGB16:
+		return tr("16-bit RGB format (5-6-5)");
+		break;
+	case QImage::Format_RGB32:
+		return tr("32-bit RGB format (0xffRRGGBB)");
+		break;
+	case QImage::Format_ARGB32:
+		return tr("32-bit ARGB format (0xAARRGGBB)");
+		break;
+	case QImage::Format_Invalid:
+		return tr("Invalid");
+		break;
+	default:
+		return tr("Unknown");
+		break;
+	}
 }
 
 void MainWindow::resizePlot() {
-    int plotH = ui.plotHeightSpin->value();
-    int plotW = ui.plotWidthSpin->value();
-    QWidget *cWidget = ui.plotScroll->widget();
-    cWidget->setFixedHeight(plotH * rowHeader.size());
-    cWidget->setFixedWidth(plotW);
+	int h = ui.plotHeightSpin->value();
+	int w = ui.plotWidthSpin->value();
+	QWidget * cWidget = ui.plotScroll->widget();
+	cWidget->setFixedHeight(h * processor.getRowHeaders().size());
+	cWidget->setFixedWidth(w);
 }
 
-void MainWindow::on_excludedResidueEdit_textChanged() {
-    ui.excludedResidueLabel->setText(getResidues(ui.excludedResidueEdit).join(
-            ", "));
+void MainWindow::on_actionToggleMask_triggered() {
+	imageMasked = !imageMasked;
+	processor.setMask(ui.imageCanvas->getMask());
+	updateInspector();
 }
 
-void MainWindow::on_phosphoEdit_textChanged() {
-    ui.phosphoLabel->setText(getResidues(ui.phosphoEdit).join(", "));
+void MainWindow::updatePlotScroll() {
+	if (ui.plotScroll->widget()) {
+		delete ui.plotScroll->takeWidget();
+	}
+	QWidget *cWidget = new QWidget(this);
+	QVBoxLayout *vlayout = new QVBoxLayout;
+	posPlotWidgets.clear();
+	PositionPlotWidget *ppw;
+	for (int i = 0; i < processor.getRowHeaders().size(); ++i) {
+		ppw = new PositionPlotWidget(this);
+		vlayout->addWidget(ppw);
+		ppw->setRange(0, processor.getGrayMax());
+		ppw->setPlotName(processor.getRowHeaders()[i]);
+		//        connect(ui.plotHeightSpin, SIGNAL(valueChanged(int)), ppw, SLOT(setPlotHeight(int)));
+		//        connect(ui.plotWidthSpin, SIGNAL(valueChanged(int)), ppw, SLOT(setPlotWidth(int)));
+		connect(ui.plotTickSpin, SIGNAL(valueChanged(int)), ppw, SLOT(setAxisTicks(int)));
+		connect(ppw, SIGNAL(madsChanged(double)), this, SLOT(updateMatrix()));
+		connect(ppw, SIGNAL(madsChanged(double)), this, SLOT(updateProcessorMadRanges()));
+		posPlotWidgets.append(ppw);
+	}
+	cWidget->setLayout(vlayout);
+	ui.plotScroll->setWidget(cWidget);
+	resizePlot();
 }
 
-QStringList MainWindow::getResidues(QPlainTextEdit * edit) const {
-    QStringList toBeProcessed = edit->toPlainText().split(QRegExp("\\W+"),
-            QString::SkipEmptyParts);
-    QStringList returnList;
-    for (int i = 0; i < toBeProcessed.size(); ++i) {
-        if (colHeader.contains(toBeProcessed[i])) {
-            returnList << toBeProcessed[i];
-        }
-    }
-    return returnList;
+void MainWindow::updatePlot() {
+	if (!processor.isReady(Processor::MATRIX_AVERAGES)) {
+		return;
+	}
+	updatePlotScroll();
+	int rows = processor.getRowHeaders().size();
+	int cols = processor.getColumnHeaders().size();
+	QStringList rowString;
+	QList<double> rowData;
+	QList<double> dlist = processor.getMadRanges();
+	for (int i = 0; i < rows; ++i) {
+		rowString.clear();
+		rowData.clear();
+		for (int j = 0; j < cols; ++j) {
+			rowString << processor.getColumnHeaders()[j];
+			double value =
+					processor.getMatrix(Processor::MATRIX_AVERAGES).getValue(i,
+							j);
+			rowData.append(value);
+		}
+		posPlotWidgets[i]->setData(rowString, rowData);
+		posPlotWidgets[i]->setPlotName(processor.getRowHeaders()[i]);
+		if (dlist.size() > 0) {
+			posPlotWidgets[i]->setMads(dlist[i]);
+		}
+		posPlotWidgets[i]->update();
+	}
 }
 
 void MainWindow::on_excludeResidueButton_clicked() {
-    QStringList exList = getResidues(ui.excludedResidueEdit);
-    QList<int> colIndeces;
-    for (int i = 0; i < exList.size(); ++i) {
-        colIndeces << colHeader.indexOf(exList[i]);
-    }
-    qSort(colIndeces);
-    int curIndex;
-    while (!colIndeces.isEmpty()) {
-        curIndex = colIndeces.takeLast();
-        colHeader.removeAt(curIndex);
-        averageModel->removeColumn(curIndex);
-    }
-    updatePlotScroll();
-    updatePlot();
-    updateMatrix();
-    on_excludedResidueEdit_textChanged();
+	QStringList excludingList = getResidues(ui.excludedResidueEdit);
+	QList<int> colIndeces;
+	for (int i = 0; i < excludingList.size(); ++i) {
+		colIndeces << processor.getImageColumnHeaders().indexOf(
+				excludingList[i]);
+	}
+	qSort(colIndeces);
+	int curIndex;
+	while (!colIndeces.isEmpty()) {
+		curIndex = colIndeces.takeLast();
+		processor.omitColumn(curIndex);
+	}
+	updatePlotScroll();
+	updatePlot();
+	updateMatrix();
+	on_excludedResidueEdit_textChanged();
 }
 
-void MainWindow::on_phosphoButton_clicked() {
-    updateMatrix();
+QStringList MainWindow::getResidues(QPlainTextEdit * edit) const {
+	QStringList toBeProcessed = edit->toPlainText().split(QRegExp("\\s+"),
+			QString::SkipEmptyParts);
+	QStringList returnList;
+	for (int i = 0; i < toBeProcessed.size(); ++i) {
+		if (processor.getColumnHeaders().contains(toBeProcessed[i])) {
+			returnList << toBeProcessed[i];
+		}
+	}
+	return returnList;
 }
 
-void MainWindow::about() {
-    QMessageBox::about(
-            this,
-            tr("About YIMP"),
-            tr(
-                    "<b>YIMP</b> is developed in Yaffe Lab.\n"
-                        "It is designed for generating <a href=\"http://scansite.mit.edu\">ScanSite</a> matrices from "
-                        "analyzing dot blot images."));
+void MainWindow::updateMatrix() {
+	if (ui.scansiteMatrixCheck->isChecked()) {
+		QStringList phosphoList = getResidues(ui.phosphoEdit);
+		QList<double> madRanges;
+		for (int i = 0; i < posPlotWidgets.size(); ++i) {
+			madRanges << posPlotWidgets[i]->getMads();
+		}
+		processor.setMadRanges(madRanges);
+		processor.clearPhosphoColumns();
+		processor.appendPhosphoColumns(phosphoList);
+		processor.calculateScansiteMatrix();
+		if (!processor.isReady(Processor::MATRIX_SCANSITE)) {
+			return;
+		}
+		displayMatrix(processor.getMatrix(Processor::MATRIX_SCANSITE));
+		ui.matrixTable->setVerticalHeaderLabels(
+				processor.getScansiteRowHeaders());
+		QStringList columnLabels = processor.getColumnHeaders();
+		columnLabels << "*";
+		ui.matrixTable->setHorizontalHeaderLabels(columnLabels);
+	} else {
+		if (!processor.isReady(Processor::MATRIX_AVERAGES)) {
+			processor.calculateScansiteMatrix();
+		}
+		displayMatrix(processor.getMatrix(Processor::MATRIX_AVERAGES));
+		ui.matrixTable->setVerticalHeaderLabels(processor.getImageRowHeaders());
+		ui.matrixTable->setHorizontalHeaderLabels(
+				processor.getImageColumnHeaders());
+	}
+}
+
+void MainWindow::on_excludedResidueEdit_textChanged() {
+	ui.excludedResidueLabel->setText(getResidues(ui.excludedResidueEdit).join(
+			", "));
+}
+
+void MainWindow::on_phosphoEdit_textChanged() {
+	ui.phosphoLabel->setText(getResidues(ui.phosphoEdit).join(", "));
+}
+
+void MainWindow::displayMatrix(const RealMatrix & matrix) {
+	ui.matrixTable->setColumnCount(matrix.getColumnCount());
+	ui.matrixTable->setRowCount(matrix.getRowCount());
+	QTableWidgetItem * item;
+	for (int r = matrix.getRowCount() - 1; r >= 0; --r) {
+		for (int c = matrix.getColumnCount() - 1; c >= 0; --c) {
+			item = new QTableWidgetItem;
+			item->setData(Qt::DisplayRole, matrix.getValue(r, c));
+			ui.matrixTable->setItem(r, c, item);
+		}
+	}
+}
+
+void MainWindow::on_actionLoadProject_triggered() {
+	QString filePath = QFileDialog::getOpenFileName(this, tr("Load project"),
+			lastProjectPath, tr("YIMP project files (*.ymp)"));
+	if (filePath.isEmpty()) {
+		return;
+	}
+	lastProjectPath = filePath;
+	if (!processor.loadProject(filePath)) {
+		return;
+	}
+	showStatus(tr("** Loaded project \"%1\"").arg(filePath));
+	initProject();
+	ui.gridRowSpin->setValue(processor.getImageRowHeaders().size());
+	ui.gridColumnSpin->setValue(processor.getImageColumnHeaders().size());
+	ui.imageCanvas->setGrid(&processor.getGrid());
+	ui.imageCanvas->setPatches(&processor.getPatches());
+	ui.gridAngleSpin->setValue(processor.getGridAngle());
+	ui.gridWidthSpin->setValue(processor.getGridElementWidth());
+	ui.gridHeightSpin->setValue(processor.getGridElementHeight());
+	ui.gridStartXSpin->setValue(processor.getGridStartPoint().x());
+	ui.gridStartYSpin->setValue(processor.getGridStartPoint().y());
+	ui.gridEndXSpin->setValue(processor.getGridEndPoint().x());
+	ui.gridEndYSpin->setValue(processor.getGridEndPoint().y());
+	ui.phosphoEdit->setPlainText(processor.getPhosphoNames().join(" "));
+	ui.imageCanvas->setImage(&processor.getImage());
+	ui.imageCanvas->setGrid(&processor.getGrid());
+	ui.imageCanvas->setPatches(&processor.getPatches());
+	ui.actionCalculateAverages->trigger();
+	updateInspector();
+	updatePlot();
+	updateMatrix();
+}
+
+void MainWindow::on_actionSaveProject_triggered() {
+	QString filePath = QFileDialog::getSaveFileName(this, tr("Load project"),
+			lastProjectPath, tr("YIMP project files (*.ymp)"));
+	if (filePath.isEmpty()) {
+		return;
+	}
+	lastProjectPath = filePath;
+	processor.saveProject(filePath);
+	showStatus(tr("** Project saved to \"%1\"").arg(filePath));
+}
+
+void MainWindow::updateProcessorMadRanges() {
+	QList<double> dlist;
+	for (int i = 0; i < posPlotWidgets.size(); ++i) {
+		dlist << posPlotWidgets[i]->getMads();
+	}
+	processor.setMadRanges(dlist);
+}
+
+void MainWindow::loadSettings() {
+	QSettings settings;
+	settings.beginGroup("GUI");
+	if (settings.contains("imageTabSplitterState")) {
+		ui.imageTabSplitter->restoreState(settings.value(
+				"imageTabSplitterState").toByteArray());
+	}
+	if (settings.contains("orthoGrid")) {
+		ui.gridOrthoCheck->setChecked(settings.value("orthoGrid").toBool());
+	}
+	if (settings.contains("inspectorTabSplitterState")) {
+		ui.inspectorTabSplitter->restoreState(settings.value(
+				"inspectorTabSplitterState").toByteArray());
+	}
+	if (settings.contains("plotWidth")) {
+		ui.plotWidthSpin->setValue(settings.value("plotWidth").toInt());
+	}
+	if (settings.contains("plotHeight")) {
+		ui.plotHeightSpin->setValue(settings.value("plotHeight").toInt());
+	}
+	if (settings.contains("plotTicks")) {
+		ui.plotTickSpin->setValue(settings.value("plotTicks").toInt());
+	}
+	if (settings.contains("matrixSplitterState")) {
+		ui.matrixSplitter->restoreState(
+				settings.value("matrixSplitterState").toByteArray());
+	}
+	if (settings.contains("plotSplitterState")) {
+		ui.plotSplitter->restoreState(
+				settings.value("plotSplitterState").toByteArray());
+	}
+	if (settings.contains("windowGeometry")) {
+		restoreGeometry(settings.value("windowGeometry").toByteArray());
+	}
+	if (settings.contains("windowState")) {
+		restoreState(settings.value("windowState").toByteArray());
+	}
+	ui.tabWidget->setCurrentIndex(settings.value("currentTab", 0).toInt());
+	if (settings.contains("imageShownInverted")) {
+		ui.actionShowInvertedImage->setChecked(settings.value(
+				"imageShownInverted", true).toBool());
+	}
+	settings.endGroup();
+	settings.beginGroup("Variables");
+	lastImagePath
+			= settings.value("lastImagePath", QDir::homePath()).toString();
+	lastProjectPath
+			= settings.value("lastProjectPath", QDir::homePath()).toString();
+	lastExportPath
+			= settings.value("lastExportPath", QDir::homePath()).toString();
+	if (settings.contains("rowHeaders")) {
+		processor.setRowHeaders(settings.value("rowHeaders").toStringList());
+	}
+	if (settings.contains("columnHeaders")) {
+		processor.setColHeaders(settings.value("columnHeaders").toStringList());
+	}
+	settings.endGroup();
+}
+
+void MainWindow::saveSettings() {
+	QSettings settings;
+	settings.beginGroup("GUI");
+	settings.setValue("imageTabSplitterState", ui.imageTabSplitter->saveState());
+	settings.setValue("orthoGrid", ui.gridOrthoCheck->isChecked());
+	settings.setValue("plotSplitterState", ui.plotSplitter->saveState());
+	settings.setValue("inspectorTabSplitterState",
+			ui.inspectorTabSplitter->saveState());
+	settings.setValue("matrixSplitterState", ui.matrixSplitter->saveState());
+	settings.setValue("currentTab", ui.tabWidget->currentIndex());
+	settings.setValue("windowGeometry", saveGeometry());
+	settings.setValue("windowState", saveState());
+	settings.setValue("imageShownInverted",
+			ui.actionShowInvertedImage->isChecked());
+	settings.setValue("plotWidth", ui.plotWidthSpin->value());
+	settings.setValue("plotHeight", ui.plotHeightSpin->value());
+	settings.setValue("plotTicks", ui.plotTickSpin->value());
+	settings.endGroup();
+	settings.beginGroup("Variables");
+	settings.setValue("lastImagePath", lastImagePath);
+	settings.setValue("lastProjectPath", lastProjectPath);
+	settings.setValue("lastExportPath", lastExportPath);
+	settings.setValue("rowHeaders", processor.getImageRowHeaders());
+	settings.setValue("columnHeaders", processor.getImageColumnHeaders());
+	settings.endGroup();
+	settings.sync();
+}
+
+void MainWindow::debugMatrix(const RealMatrix * matrix) {
+	for (int r = matrix->getRowCount() - 1; r >= 0; --r) {
+		for (int c = matrix->getColumnCount() - 1; c >= 0; --c) {
+			std::cout << matrix->getValue(r, c) << " ";
+		}
+		std::cout << "\n";
+	}
+}
+
+void MainWindow::debug(const QString &message) {
+	std::cout << "DEBUG: " << message.toStdString() << std::endl;
+}
+
+void MainWindow::on_actionExportScansitePssm_triggered() {
+	QString filePath = QFileDialog::getSaveFileName(this, tr(
+			"Export Scansite PSSM"), lastExportPath, tr(
+			"Tab-delimited text files (*.txt)"));
+	if (filePath.isEmpty()) {
+		return;
+	}
+	lastExportPath = filePath;
+	processor.saveScansitePssm(filePath);
+}
+
+void MainWindow::makeConnections() {
+	connect(ui.patchGroup, SIGNAL(toggled(bool)), ui.imageCanvas, SLOT(showPatches(bool)));
+	connect(ui.patchNullRadio, SIGNAL(toggled(bool)), this, SLOT(updatePatchType()));
+	connect(ui.patchPolygonRadio, SIGNAL(toggled(bool)), this, SLOT(updatePatchType()));
+	connect(ui.imageScaleSpin, SIGNAL(valueChanged(double)), ui.imageCanvas, SLOT(setScale(double)));
+	connect(ui.gridGroup, SIGNAL(toggled(bool)), ui.imageCanvas, SLOT(showGrid(bool)));
+	connect(ui.gridTypeCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(updateTypeLabels()));
+	connect(ui.gridOrthoCheck, SIGNAL(toggled(bool)), this, SLOT(updateTypeLabels()));
+	connect(ui.gridStartXSpin, SIGNAL(valueChanged(double)), &processor, SLOT(setGridStartPointX(double)));
+	connect(ui.gridStartYSpin, SIGNAL(valueChanged(double)), &processor, SLOT(setGridStartPointY(double)));
+	connect(ui.gridEndXSpin, SIGNAL(valueChanged(double)), &processor, SLOT(setGridEndPointX(double)));
+	connect(ui.gridEndYSpin, SIGNAL(valueChanged(double)), &processor, SLOT(setGridEndPointY(double)));
+	connect(ui.plotHeightSpin, SIGNAL(valueChanged(int)), this, SLOT(resizePlot()));
+	connect(ui.plotWidthSpin, SIGNAL(valueChanged(int)), this, SLOT(resizePlot()));
+	connect(ui.updateMatrixButton, SIGNAL(clicked()), this,
+			SLOT(updateMatrix()));
+	connect(ui.scansiteMatrixCheck, SIGNAL(toggled(bool)), this, SLOT(updateMatrix()));
+	connect(ui.actionShowInvertedImage, SIGNAL(toggled(bool)), ui.imageCanvas, SLOT(setImageInverted(bool)));
+	connect(ui.actionLookDownZ, SIGNAL(toggled(bool)), ui.inspectorCanvas, SLOT(setLookDownZ(bool)));
+	connect(ui.actionOrthoView, SIGNAL(toggled(bool)), ui.inspectorCanvas, SLOT(setOrthoView(bool)));
+	//	connect(ui.actionResetView, SIGNAL(triggered()), ui.inspectorCanvas, SLOT(
+	//			resetView()));
+	connect(ui.matrixTable, SIGNAL(cellChanged(int, int)), this, SLOT(setScansiteMatrixValue(int, int)));
+	connect(ui.gridAngleSpin, SIGNAL(valueChanged(double)), &processor, SLOT(setGridAngle(double)));
+	connect(ui.gridRowSpin, SIGNAL(valueChanged(int)), &processor, SLOT(setGridRowCount(int)));
+	connect(ui.gridColumnSpin, SIGNAL(valueChanged(int)), &processor, SLOT(setGridColumnCount(int)));
+	connect(ui.gridWidthSpin, SIGNAL(valueChanged(double)), &processor, SLOT(setGridElementWidth(double)));
+	connect(ui.gridHeightSpin, SIGNAL(valueChanged(double)), &processor, SLOT(setGridElementHeight(double)));
+	connect(ui.actionClearPatches, SIGNAL(triggered()), &processor, SLOT(
+			clearPatches()));
+	connect(ui.actionClearLastPatch, SIGNAL(triggered()), &processor, SLOT(
+			clearLastPatch()));
+	connect(ui.actionCalculateAverages, SIGNAL(triggered()), &processor, SLOT(
+			calculateAverages()));
+	connect(ui.actionCalculateAverages, SIGNAL(triggered()), this, SLOT(
+			updatePlot()));
+	connect(&processor, SIGNAL(message(const QString &)), this, SLOT(showStatus(const QString &)));
+	connect(&processor, SIGNAL(matrixChanged(int, RealMatrix *)), this, SLOT(updateInspector()));
+	connect(&processor, SIGNAL(imageChanged(const QImage *)), ui.imageCanvas, SLOT(setImage(const QImage *)));
+	connect(&processor, SIGNAL(patchListChanged(const PatchList *)), ui.imageCanvas, SLOT(setPatches(const PatchList *)));
+	connect(&processor, SIGNAL(gridChanged(const Grid *)), ui.imageCanvas, SLOT(setGrid(const Grid *)));
+	connect(&processor, SIGNAL(gridRowCountChanged(int)), ui.gridRowSpin, SLOT(setValue(int)));
+	connect(&processor, SIGNAL(gridColumnCountChanged(int)), ui.gridColumnSpin, SLOT(setValue(int)));
+	connect(&processor, SIGNAL(gridRowCountChanged(int)), this, SLOT(updatePlot()));
+	connect(&processor, SIGNAL(gridColumnCountChanged(int)), this, SLOT(updatePlot()));
+	connect(&processor, SIGNAL(gridAngleChanged(double)), ui.gridAngleSpin, SLOT(setValue(double)));
+	connect(&processor, SIGNAL(gridElementWidthChanged(double)), ui.gridWidthSpin, SLOT(setValue(double)));
+	connect(&processor, SIGNAL(gridElementHeightChanged(double)), ui.gridHeightSpin, SLOT(setValue(double)));
+	connect(&processor, SIGNAL(gridStartXChanged(double)), ui.gridStartXSpin, SLOT(setValue(double)));
+	connect(&processor, SIGNAL(gridStartYChanged(double)), ui.gridStartYSpin, SLOT(setValue(double)));
+	connect(&processor, SIGNAL(gridEndXChanged(double)), ui.gridEndXSpin, SLOT(setValue(double)));
+	connect(&processor, SIGNAL(gridEndYChanged(double)), ui.gridEndYSpin, SLOT(setValue(double)));
+	connect(&processor, SIGNAL(gridOverlapped(bool)), ui.overlapLabel, SLOT(setVisible(bool)));
+}
+
+void MainWindow::setScansiteMatrixValue(int row, int column) {
+	if (ui.scansiteMatrixCheck->isChecked()) {
+		double val = ui.matrixTable->item(row, column)->data(Qt::DisplayRole).toDouble();
+		processor.setMatrixValue(Processor::MATRIX_SCANSITE, row, column, val);
+	}
+}
+
+void MainWindow::on_actionExportAverageIntensities_triggered() {
+	QString filePath = QFileDialog::getSaveFileName(this, tr(
+			"Export average intensities"), lastExportPath, tr(
+			"Tab-delimited text files (*.txt)"));
+	if (filePath.isEmpty()) {
+		return;
+	}
+	lastExportPath = filePath;
+	processor.saveAverageIntensities(filePath);
+}
+
+void MainWindow::on_actionResetView_triggered() {
+	ui.actionLookDownZ->setChecked(false);
+	ui.actionOrthoView->setChecked(false);
+	ui.inspectorCanvas->resetView();
 }

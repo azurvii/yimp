@@ -1,7 +1,7 @@
 /*
  * ImageCanvas.h
  *
- *  Created on: Feb 27, 2010
+ *  Created on: Jun 3, 2010
  *      Author: Vincent
  */
 
@@ -10,71 +10,55 @@
 
 #include <QLabel>
 #include <QBitmap>
+#include "Grid.h"
+#include "Patch.h"
 
-#ifndef slots
-#define slots
-#endif
+class Processor;
 
 class ImageCanvas: public QLabel {
 Q_OBJECT
 public:
-    ImageCanvas(QWidget *parent = 0);
-    virtual ~ImageCanvas();
-    QBitmap getMask() const;
-    QVector<QRect> getGrid() const;
-    QPoint getGridStartPoint() const;
-    QVector<QPolygon> getPolygons() const;
-    double getGridAngle() const;
+	ImageCanvas(QWidget * parent = 0);
+	virtual ~ImageCanvas();
+
+public:
+	QBitmap getMask() const;
+	double getScale() const;
 
 public slots:
-    void addCircleGrid(int leftTopX, int leftTopY, int rightBottomX,
-            int rightBottomY, double radius, int col, int row, double angle);
-    void drawBackground(int leftTopX, int leftTopY, int rightBottomX,
-            int rightBottomY);
-    void drawBackground(bool shown);
-    void loadCircleGrid(const QVector<QRect> &circleGrid);
-    void drawCircleGrid();
-    void addPolygon(const QPolygon &polygon);
-    void loadPolygons(const QVector<QPolygon> &polygons);
-    void loadGridStartPoint(const QPoint &startPoint);
-    void loadGridAngle(double angle);
-    void rotate(double angle);
-    void clearCircleGrid();
-    void clearPolygons();
-    void clearLastPolygon();
-    void clearBackground();
-    void setImage(QImage *image);
-    void setScale(double scale);
+	void showGrid(bool show = true);
+	void hideGrid(bool hide = true);
+	void showPatches(bool show = true);
+	void hidePatches(bool hide = true);
+	void setScale(double imageScale);
+	void setImage(const QImage * image);
+	void updateImage();
+	void setProcessor(Processor * processor);
+	void setGrid(const Grid * grid);
+	void updateGrid();
+	void setPatches(const PatchList * patches);
+	void updatePatches();
+	void setImageInverted(bool inverted);
 
-    signals:
-    void backgroundMinChanged(int min);
-    void backgroundMaxChanged(int max);
+signals:
+	void imageScaleChanged(double imageScale);
 
 protected:
-    void paintEvent(QPaintEvent *event);
+	void paintEvent(QPaintEvent *event);
 
 private:
-    void scanBackground();
+	Processor *processor;
+	bool isGridShown;
+	bool isPatchesShown;
+	double scale;
+	const QImage * image;
+	const Grid *grid;
+	const PatchList *patches;
+	bool imageInverted;
 
 private:
-    QVector<QRect> circleGrid;
-    QVector<QPolygon> polygons;
-    //	QList<QRect> ellipses;
-    QRect bg;
-    double angle;
-    double radius;
-    int startX;
-    int startY;
-    int endX;
-    int endY;
-    int col;
-    int row;
-    bool showBg;
-    int min;
-    int max;
-    QImage *image;
-    double maxColor;
-    double scale;
+	void init();
+	void scaleImage();
 };
 
 #endif /* IMAGECANVAS_H_ */
