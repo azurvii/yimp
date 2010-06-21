@@ -1,24 +1,21 @@
 #summary Notes for installing the software on your platform.
 #labels Featured,Phase-Deploy
 
-== Mac OS X _(Tested on Mac OS X 10.6.2)_ ==
+== Mac OS X _(Tested on Mac OS X 10.6.3)_ ==
 
   * Download yimp-mac.zip.
   * Unzip.
-  * Move all .framework folders to /Library/Frameworks.
+  * Move all folders in "frameworks" folder to /Library/Frameworks. i.e. you should have /Library/Frameworks/QtCore.framework etc.
   * Run the yimp.app.
-
-*NOTE:
-Not tested on 10.5 and before. But 10.5 should work, 10.4 and before should not.*
 
 
 == Windows _(Tested on Windows XP SP3, Vista, and 7)_ ==
 
-  * Download setup.exe.
+  * Download yimp-setup.exe.
   * Install and run it from Start menu.
 
 
-== Linux _(Tested on Ubuntu 10.04)_ ==
+== Linux _(Tested on Ubuntu 10.04 x86)_ ==
 
   * Give various distributions, no binary is provided; you need to compile it yourself.
   * Download yimp-src.tar.gz.
