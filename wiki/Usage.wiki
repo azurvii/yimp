@@ -60,7 +60,7 @@ There are 5 tabs, designed according to the workflow, from left to right:
 === *Matrix* tab ===
 
   * Here lays the thing we are really after, the PSSM.
-  * Specify the central residue(s) in the right text box (this also need properly labeled columns). 
+  * Specify the central residue(s) in the right text box (this also need properly labeled columns). Then click "Update matrix", the matrix displayed would be updated according to the central residues.
 
 
 === *Console* tab ===
