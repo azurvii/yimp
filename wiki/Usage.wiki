@@ -1,4 +1,4 @@
-#summary How to use this program. (Revising)
+#summary How to use this program.
 #labels Featured,Phase-Support
 
 == Introduction ==
